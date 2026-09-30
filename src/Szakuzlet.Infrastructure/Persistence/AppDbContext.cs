@@ -16,6 +16,10 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<PatientTask> Tasks => Set<PatientTask>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<Order> Orders => Set<Order>();
+    public DbSet<BusinessHour> BusinessHours => Set<BusinessHour>();
+    public DbSet<CalendarOverride> CalendarOverrides => Set<CalendarOverride>();
+    public DbSet<CallRecord> Calls => Set<CallRecord>();
+    public DbSet<CallbackRequest> Callbacks => Set<CallbackRequest>();
 
     Task<int> IAppDbContext.SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
 
@@ -123,6 +127,40 @@ public class AppDbContext : DbContext, IAppDbContext
                 .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => x.DataCompletionToken);
             e.HasIndex(x => x.Status);
+        });
+
+        b.Entity<BusinessHour>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Day).IsUnique();
+        });
+
+        b.Entity<CalendarOverride>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Label).IsRequired().HasMaxLength(120);
+            e.HasIndex(x => x.Date).IsUnique();
+        });
+
+        b.Entity<CallRecord>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.PhoneNumber).IsRequired().HasMaxLength(30);
+            e.Property(x => x.IvrMenu).HasMaxLength(100);
+            e.Property(x => x.RecordingReference).HasMaxLength(300);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => x.PhoneNumber);
+        });
+
+        b.Entity<CallbackRequest>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.PhoneNumber).IsRequired().HasMaxLength(30);
+            e.Property(x => x.Resolution).HasMaxLength(300);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => new { x.PhoneNumber, x.Status });
         });
     }
 }

@@ -106,3 +106,7 @@ h1:focus {
 .home-card h2 { font-size:1.15rem; color:#1b6ec2; }
 .home-link { margin-top:1rem; padding:.75rem; background:#f5f9ff; border-radius:6px;
     word-break:break-all; }
+
+.oh-table { width:100%; border-collapse:collapse; }
+.oh-table td { padding:.4rem .6rem; border-bottom:1px solid #eee; }
+.oh-table td:first-child { font-weight:600; width:120px; }

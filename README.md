@@ -24,6 +24,24 @@ alapján épül fel, moduláris megközelítéssel.
 - **Pulti áttekintő (Dashboard)**: nyitott feladatok, parkoltatott számlák, függő rendelések
 - **Ütemezett automatizmusok** (háttérfolyamat): parkoltatás-lezárás, kihordási értesítők
 
+**I. Modul / B) – Telefonközpont (Call Center) és Intelligens IVR**
+
+- **Központi Nyitvatartás + Ünnepnapi Naptár modul** – a cég egyetlen igazságforrása:
+  alap heti nyitvatartás + egyedi felülírások (ünnep, ledolgozós szombat, rövidített).
+  Időzóna-helyes (Europe/Budapest) „nyitva van-e most?” döntés és következő nyitás.
+- **Kifelé szinkron** (webshop „Kapcsolat” + Google Térkép) absztrakció mögött, mock
+  implementációval; bármely naptár-módosítás automatikusan szinkronizál.
+- **Bejövő hívás feldolgozás** (a telefonközpont hívja): nyitvatartási zsilip,
+  CRM-találat telefonszám alapján (normalizálva), IVR menüpont-jelzés, adatlap „megnyitása”
+  a Timeline-on, idős/legacy beteg jelzése.
+- **Szelektív hangrögzítés-kezelés** (9-es gomb / „Hangrögzítés leállítása”) módosíthatatlan
+  jogi **Audit Trail**-lel (időbélyeg, kezelő, ok).
+- **Önürítő visszahívási lista**: nem fogadott / foglalt pult / munkaidőn kívüli igények;
+  automatikus lezárás, ha a számot időközben elérték.
+- **REST API a külső telefonközpontnak** (`/api/callcenter/...`): opening-status, incoming,
+  answered, end, recording, callback.
+- **Nyitvatartás admin UI** (`/nyitvatartas`).
+
 ## Architektúra
 
 Réteges felépítés, hogy a KVL vállalatirányítási rendszer API-jaira később
@@ -71,8 +89,19 @@ ASPNETCORE_ENVIRONMENT=Development dotnet run --project src/Szakuzlet.Web
 - Kezdőlap: `/`
 - Pulti kiszolgálás: `/pult`
 - Pulti áttekintő (Dashboard): `/dashboard`
+- Nyitvatartás admin: `/nyitvatartas`
 - Páciens-portál: `/adatlap/{token}` (a linket a kezdőlap „Demo link” gombja generálja)
 - Rendelés-adatpótlás: `/rendeles-adatpotlas/{token}`
+
+### Telefonközpont REST API (a külső VoIP hívja)
+
+- `GET  /api/callcenter/opening-status` – nyitva van-e most (IVR zsilip)
+- `POST /api/callcenter/incoming` – bejövő hívás (CRM-találat + menüjelzés)
+- `POST /api/callcenter/{callId}/answered` – hívás fogadva (önüríti a visszahívást)
+- `POST /api/callcenter/{callId}/end` – hívás vége (nem fogadott → visszahívási lista)
+- `POST /api/callcenter/{callId}/recording` – hangrögzítés döntés + Audit Trail
+- `POST /api/callcenter/callback/after-hours` – munkaidőn kívüli visszahívás
+- `POST /api/callcenter/callback/busy-desk` – foglalt pult miatti visszahívás
 
 ## Tesztek
 

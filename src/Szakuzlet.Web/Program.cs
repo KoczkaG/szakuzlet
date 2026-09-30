@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Szakuzlet.Infrastructure;
 using Szakuzlet.Infrastructure.Persistence;
+using Szakuzlet.Web.Api;
 using Szakuzlet.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +27,8 @@ using (var scope = app.Services.CreateScope())
         db.Database.Migrate();
     else
         db.Database.EnsureCreated();
+
+    await Szakuzlet.Infrastructure.Persistence.DataSeeder.SeedAsync(db);
 }
 
 // Configure the HTTP request pipeline.
@@ -41,5 +44,8 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// A telefonközpont (külső VoIP) REST végpontjai.
+app.MapCallCenterApi();
 
 app.Run();

@@ -17,6 +17,10 @@ public interface IAppDbContext
     DbSet<PatientTask> Tasks { get; }
     DbSet<Invoice> Invoices { get; }
     DbSet<Order> Orders { get; }
+    DbSet<BusinessHour> BusinessHours { get; }
+    DbSet<CalendarOverride> CalendarOverrides { get; }
+    DbSet<CallRecord> Calls { get; }
+    DbSet<CallbackRequest> Callbacks { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

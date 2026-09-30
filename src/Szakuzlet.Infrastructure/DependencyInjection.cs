@@ -53,6 +53,11 @@ public static class DependencyInjection
         services.AddSingleton<InMemoryNotificationSender>();
         services.AddSingleton<INotificationSender>(sp => sp.GetRequiredService<InMemoryNotificationSender>());
 
+        // Nyitvatartás kifelé szinkron (webshop, Google) – mock a valós API-kig.
+        services.AddSingleton<Szakuzlet.Infrastructure.Calendar.LoggingOpeningHoursSync>();
+        services.AddSingleton<Szakuzlet.Application.Calendar.IOpeningHoursSync>(
+            sp => sp.GetRequiredService<Szakuzlet.Infrastructure.Calendar.LoggingOpeningHoursSync>());
+
         // Application szolgáltatások.
         services.AddScoped<EventRecorder>();
         services.AddScoped<Szakuzlet.Application.Dashboard.DashboardService>();
@@ -61,6 +66,8 @@ public static class DependencyInjection
         services.AddScoped<InvoiceParkingService>();
         services.AddScoped<OrderCompletionService>();
         services.AddScoped<WearExpiryService>();
+        services.AddScoped<Szakuzlet.Application.Calendar.OpeningHoursService>();
+        services.AddScoped<Szakuzlet.Application.CallCenter.CallCenterService>();
 
         return services;
     }

@@ -1,0 +1,155 @@
+@page "/nyitvatartas"
+@using Szakuzlet.Application.Calendar
+@using Szakuzlet.Domain.Entities
+@inject OpeningHoursService Hours
+@rendermode InteractiveServer
+
+<PageTitle>Nyitvatartás és ünnepnapi naptár</PageTitle>
+
+<div class="home">
+    <h1>Nyitvatartás és ünnepnapi naptár</h1>
+    <p class="home-lead">
+        A cég egyetlen igazságforrása. Az itt mentett módosítás automatikusan szinkronizál
+        a telefonos IVR-ral, a webshoppal és a Google Térképpel.
+    </p>
+
+    @if (_status is not null)
+    {
+        <div class="ds-section">
+            <h3>Aktuális állapot</h3>
+            @if (_status.IsOpen)
+            {
+                <p style="color:#0a7d33;font-weight:600;">🟢 Jelenleg NYITVA</p>
+            }
+            else
+            {
+                <p style="color:#b02a2a;font-weight:600;">🔴 Jelenleg ZÁRVA</p>
+                @if (_status.NextOpenAtLocal is not null)
+                {
+                    <p class="ds-hint">Következő nyitás: @_status.NextOpenAtLocal?.ToString("yyyy-MM-dd HH:mm")</p>
+                }
+            }
+        </div>
+    }
+
+    <div class="ds-section">
+        <h3>Alapértelmezett heti nyitvatartás</h3>
+        <table class="oh-table">
+            @foreach (var bh in _weekly)
+            {
+                <tr>
+                    <td>@HuDay(bh.Day)</td>
+                    <td>
+                        @if (bh.IsClosed) { <span>Zárva</span> }
+                        else { <span>@bh.OpensAt?.ToString("HH:mm") – @bh.ClosesAt?.ToString("HH:mm")</span> }
+                    </td>
+                </tr>
+            }
+        </table>
+    </div>
+
+    <div class="ds-section">
+        <h3>Egyedi nap felvitele (ünnep / ledolgozós / rövidített)</h3>
+        <div class="ds-field">
+            <label>Dátum</label>
+            <input type="date" class="ds-input" @bind="_date" />
+        </div>
+        <div class="ds-field">
+            <label>Megnevezés</label>
+            <input class="ds-input" @bind="_label" placeholder="pl. Húsvéthétfő" />
+        </div>
+        <label class="ds-check">
+            <input type="checkbox" @bind="_closed" /> Zárva ezen a napon
+        </label>
+        @if (!_closed)
+        {
+            <div class="ds-field">
+                <label>Nyitás</label>
+                <input type="time" class="ds-input" @bind="_opens" />
+            </div>
+            <div class="ds-field">
+                <label>Zárás</label>
+                <input type="time" class="ds-input" @bind="_closes" />
+            </div>
+        }
+        <button class="ds-submit" @onclick="SaveOverride" disabled="@_saving">
+            @(_saving ? "Mentés…" : "Mentés és szinkronizálás")
+        </button>
+    </div>
+
+    <div class="ds-section">
+        <h3>Közelgő egyedi napok</h3>
+        @if (_overrides.Count == 0)
+        {
+            <p>Nincs felvett egyedi nap.</p>
+        }
+        else
+        {
+            <ul class="desk-matches">
+                @foreach (var o in _overrides)
+                {
+                    <li>
+                        <strong>@o.Date.ToString("yyyy-MM-dd")</strong> – @o.Label
+                        @if (o.IsClosed) { <span class="desk-badge">Zárva</span> }
+                        else { <span class="ds-hint">@o.OpensAt?.ToString("HH:mm") – @o.ClosesAt?.ToString("HH:mm")</span> }
+                        <button class="desk-back" @onclick="() => Delete(o.Id)">Törlés</button>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+@code {
+    private OpeningStatus? _status;
+    private List<BusinessHour> _weekly = new();
+    private List<CalendarOverride> _overrides = new();
+
+    private DateTime? _date;
+    private string _label = string.Empty;
+    private bool _closed = true;
+    private TimeOnly? _opens;
+    private TimeOnly? _closes;
+    private bool _saving;
+
+    protected override async Task OnInitializedAsync() => await Reload();
+
+    private async Task Reload()
+    {
+        _status = await Hours.GetStatusNowAsync();
+        _weekly = await Hours.GetWeeklyHoursAsync();
+        _overrides = await Hours.GetUpcomingOverridesAsync();
+    }
+
+    private async Task SaveOverride()
+    {
+        if (_date is null || string.IsNullOrWhiteSpace(_label)) return;
+        _saving = true;
+        try
+        {
+            await Hours.UpsertOverrideAsync(
+                DateOnly.FromDateTime(_date.Value), _label, _closed,
+                _closed ? null : _opens, _closed ? null : _closes);
+            _label = string.Empty; _date = null; _closed = true; _opens = null; _closes = null;
+            await Reload();
+        }
+        finally { _saving = false; }
+    }
+
+    private async Task Delete(Guid id)
+    {
+        await Hours.DeleteOverrideAsync(id);
+        await Reload();
+    }
+
+    private static string HuDay(DayOfWeek d) => d switch
+    {
+        DayOfWeek.Monday => "Hétfő",
+        DayOfWeek.Tuesday => "Kedd",
+        DayOfWeek.Wednesday => "Szerda",
+        DayOfWeek.Thursday => "Csütörtök",
+        DayOfWeek.Friday => "Péntek",
+        DayOfWeek.Saturday => "Szombat",
+        _ => "Vasárnap"
+    };
+}
