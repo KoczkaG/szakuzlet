@@ -76,6 +76,16 @@ public static class DependencyInjection
         services.AddScoped<Szakuzlet.Application.Billing.BillingService>();
         services.AddScoped<Szakuzlet.Application.Billing.EanPoolService>();
         services.AddScoped<Szakuzlet.Application.Billing.SettlementService>();
+        services.AddScoped<Szakuzlet.Application.Contracts.ContractService>();
+
+        // eIDAS aláírás, dokumentum-generátor és OCR mockok a valós szolgáltatókig.
+        services.AddSingleton<Szakuzlet.Infrastructure.Signing.MockSignatureService>();
+        services.AddSingleton<Szakuzlet.Application.Signing.ISignatureService>(
+            sp => sp.GetRequiredService<Szakuzlet.Infrastructure.Signing.MockSignatureService>());
+        services.AddSingleton<Szakuzlet.Application.Documents.IDocumentGenerator,
+            Szakuzlet.Infrastructure.Documents.MockDocumentGenerator>();
+        services.AddSingleton<Szakuzlet.Application.Documents.IOcrService,
+            Szakuzlet.Infrastructure.Documents.MockOcrService>();
 
         // Hiteles e-számlázás (Számlázz.hu) mock a valós API-ig.
         services.AddSingleton<Szakuzlet.Application.Billing.IEInvoiceClient,

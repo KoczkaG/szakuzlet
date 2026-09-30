@@ -29,6 +29,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<DataCompletionRequest> DataCompletionRequests => Set<DataCompletionRequest>();
     public DbSet<HealthFund> HealthFunds => Set<HealthFund>();
     public DbSet<EanCode> EanCodes => Set<EanCode>();
+    public DbSet<Contract> Contracts => Set<Contract>();
 
     Task<int> IAppDbContext.SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
 
@@ -269,6 +270,24 @@ public class AppDbContext : DbContext, IAppDbContext
             e.Property(x => x.Code).IsRequired().HasMaxLength(60);
             e.HasIndex(x => x.Code).IsUnique();
             e.HasIndex(x => x.Used);
+        });
+
+        b.Entity<Contract>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Number).IsRequired().HasMaxLength(50);
+            e.Property(x => x.DeviceModel).IsRequired().HasMaxLength(200);
+            e.Property(x => x.DeviceSerialNumber).IsRequired().HasMaxLength(100);
+            e.Property(x => x.MaskModel).HasMaxLength(200);
+            e.Property(x => x.PdfReference).HasMaxLength(300);
+            e.Property(x => x.ScannedReference).HasMaxLength(300);
+            e.Property(x => x.SignedFromIp).HasMaxLength(64);
+            e.Property(x => x.DepositAmount).HasColumnType("numeric(12,2)");
+            e.Property(x => x.PressureCmH2O).HasColumnType("numeric(5,2)");
+            e.HasOne(x => x.Patient).WithMany(p => p.Contracts)
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.Number).IsUnique();
+            e.HasIndex(x => x.Status);
         });
     }
 }
