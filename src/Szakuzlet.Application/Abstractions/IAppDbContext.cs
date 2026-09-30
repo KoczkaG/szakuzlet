@@ -30,6 +30,11 @@ public interface IAppDbContext
     DbSet<DataCompletionRequest> DataCompletionRequests { get; }
     DbSet<HealthFund> HealthFunds { get; }
     DbSet<EanCode> EanCodes { get; }
+    DbSet<Contract> Contracts { get; }
+    DbSet<ExpressIntake> ExpressIntakes { get; }
+    DbSet<PostalTrial> PostalTrials { get; }
+    DbSet<EducationVideo> EducationVideos { get; }
+    DbSet<EducationAcknowledgement> EducationAcknowledgements { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

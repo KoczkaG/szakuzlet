@@ -57,4 +57,7 @@ app.MapDataQualityApi();
 // Számlázás, EAN-pool, OEP-egyeztető végpontok (II. Modul).
 app.MapBillingApi();
 
+// Szerződés, asszisztens, telemedicina végpontok (III. Modul).
+app.MapContractsApi();
+
 app.Run();

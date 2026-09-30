@@ -45,12 +45,33 @@ public static class DataSeeder
                     "1051 Budapest, Pénztár utca 5.", "18000000-2-41"));
             await db.SaveChangesAsync(ct);
         }
+
+        await SeedEducationVideosAsync(db, ct);
     }
 
     private static HealthFund Fund(string name, bool strict, string? address, string? taxNumber) => new()
     {
         Id = Guid.NewGuid(), Name = name, StrictBilling = strict,
         OfficialAddress = address, TaxNumber = taxNumber, IsActive = true
+    };
+
+    // (a nyitvatartás/EP seed alá kerül, külön AnyAsync-ellenőrzéssel)
+    public static async Task SeedEducationVideosAsync(AppDbContext db, CancellationToken ct = default)
+    {
+        if (await db.EducationVideos.AnyAsync(ct)) return;
+        db.EducationVideos.AddRange(
+            Video("AirSense 11", "AirSense 11 – üzembe helyezés", "https://video/airsense11-setup", false),
+            Video("AirSense 11", "AirSense 11 – tisztítás", "https://video/airsense11-clean", false),
+            Video("Orrmaszk M", "Orrmaszk felhelyezése", "https://video/nasalmask-fit", false),
+            Video("*", "Baktériumszűrő felhelyezése", "https://video/filter", true),
+            Video("*", "Szűrők tisztítása", "https://video/filter-clean", true));
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static EducationVideo Video(string model, string title, string url, bool generic) => new()
+    {
+        Id = Guid.NewGuid(), ProductModel = model, Title = title, Url = url,
+        IsGeneric = generic, IsActive = true
     };
 
     private static ReferralSource Referral(string name, string? doctor) => new()

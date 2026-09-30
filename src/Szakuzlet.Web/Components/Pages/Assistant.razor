@@ -1,0 +1,64 @@
+@page "/asszisztens"
+@using Szakuzlet.Application.Assistant
+@inject AssistantService AssistantSvc
+@rendermode InteractiveServer
+
+<PageTitle>KVL Digitális Asszisztens</PageTitle>
+
+<div class="home">
+    <h1>KVL Digitális Asszisztens</h1>
+    <p class="home-lead">A folyamatban lévő ügyek prioritásos áttekintése és vezetői próbariport.</p>
+
+    @if (_wf is not null)
+    {
+        <div class="ds-section">
+            <h3>Munkalista</h3>
+            <div class="asst-grid">
+                <div class="asst-card"><span class="asst-num">@_wf.ExpressWaiting</span><span>Expressz átvételre vár</span></div>
+                <div class="asst-card"><span class="asst-num">@_wf.PostalAwaitingPayment</span><span>Postai: utalásra vár</span></div>
+                <div class="asst-card"><span class="asst-num">@_wf.PostalAwaitingSignature</span><span>Postai: aláírásra vár</span></div>
+                <div class="asst-card"><span class="asst-num">@_wf.ContractsAwaitingSignature</span><span>Szerződés aláírásra vár</span></div>
+                <div class="asst-card"><span class="asst-num">@_wf.OutOfStockExpress</span><span>Expressz: beszerzésre vár</span></div>
+            </div>
+        </div>
+    }
+
+    <div class="ds-section">
+        <h3>Vezetői próbariport</h3>
+        <div class="stat-range">
+            <label>Kezdet</label><input type="date" class="ds-input" @bind="_from" />
+            <label>Vége</label><input type="date" class="ds-input" @bind="_to" />
+            <button class="ds-submit" @onclick="LoadReport">Lekérdezés</button>
+        </div>
+        @if (_report is not null)
+        {
+            <table class="oh-table">
+                <tr><td>Megkezdett próbák</td><td>@_report.Started</td></tr>
+                <tr><td>Lezárt próbák</td><td>@_report.Closed</td></tr>
+                <tr><td>Elutasítások</td><td>@_report.Rejected</td></tr>
+                <tr><td>Hosszabbítások</td><td>@_report.Extended</td></tr>
+                <tr><td>Elutasítási arány</td><td>@_report.RejectionRate.ToString(System.Globalization.CultureInfo.InvariantCulture)%</td></tr>
+            </table>
+        }
+    </div>
+</div>
+
+@code {
+    private WorkflowOverview? _wf;
+    private TrialReport? _report;
+    private DateTime? _from = DateTime.UtcNow.Date.AddMonths(-1);
+    private DateTime? _to = DateTime.UtcNow.Date.AddDays(1);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _wf = await AssistantSvc.GetWorkflowAsync();
+        await LoadReport();
+    }
+
+    private async Task LoadReport()
+    {
+        var from = new DateTimeOffset(_from ?? DateTime.UtcNow.Date.AddMonths(-1), TimeSpan.Zero);
+        var to = new DateTimeOffset(_to ?? DateTime.UtcNow.Date.AddDays(1), TimeSpan.Zero);
+        _report = await AssistantSvc.GetTrialReportAsync(from, to);
+    }
+}

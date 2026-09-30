@@ -1,5 +1,6 @@
 using Szakuzlet.Application.Invoices;
 using Szakuzlet.Application.Logistics;
+using Szakuzlet.Application.Postal;
 using Szakuzlet.Application.WearExpiry;
 
 namespace Szakuzlet.Web.BackgroundJobs;
@@ -39,16 +40,19 @@ public sealed class AutomationWorker : BackgroundService
                 var parking = scope.ServiceProvider.GetRequiredService<InvoiceParkingService>();
                 var wear = scope.ServiceProvider.GetRequiredService<WearExpiryService>();
                 var shipments = scope.ServiceProvider.GetRequiredService<ShipmentService>();
+                var postal = scope.ServiceProvider.GetRequiredService<PostalTrialService>();
 
                 var closed = await parking.CloseExpiredParkingsAsync(stoppingToken);
                 var notified = await wear.RunAsync(stoppingToken);
                 var shipmentUpdates = await shipments.SyncOpenShipmentsAsync(stoppingToken);
+                var payments = await postal.SyncPaymentsAsync(stoppingToken);
+                var overdue = await postal.RunReminderAndOverdueAsync(stoppingToken);
 
-                if (closed > 0 || notified > 0 || shipmentUpdates > 0)
+                if (closed > 0 || notified > 0 || shipmentUpdates > 0 || payments > 0 || overdue.Count > 0)
                     _logger.LogInformation(
-                        "Automatizmus lefutott: {Closed} parkoltatás lezárva, {Notified} kihordási értesítő, " +
-                        "{Shipments} csomagstátusz frissítve.",
-                        closed, notified, shipmentUpdates);
+                        "Automatizmus lefutott: {Closed} parkoltatás, {Notified} kihordási értesítő, " +
+                        "{Shipments} csomagstátusz, {Payments} postai fizetés párosítva, {Overdue} elmaradós próba.",
+                        closed, notified, shipmentUpdates, payments, overdue.Count);
             }
             catch (OperationCanceledException) { break; }
             catch (Exception ex)

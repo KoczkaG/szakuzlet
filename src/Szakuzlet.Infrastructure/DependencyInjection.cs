@@ -76,6 +76,31 @@ public static class DependencyInjection
         services.AddScoped<Szakuzlet.Application.Billing.BillingService>();
         services.AddScoped<Szakuzlet.Application.Billing.EanPoolService>();
         services.AddScoped<Szakuzlet.Application.Billing.SettlementService>();
+        services.AddScoped<Szakuzlet.Application.Contracts.ContractService>();
+        services.AddScoped<Szakuzlet.Application.Express.ExpressIntakeService>();
+        services.AddScoped<Szakuzlet.Application.Postal.PostalTrialService>();
+        services.AddScoped<Szakuzlet.Application.Contracts.TrialClosureService>();
+        services.AddScoped<Szakuzlet.Application.Telemedicine.TelemedicineService>();
+        services.AddScoped<Szakuzlet.Application.Assistant.AssistantService>();
+
+        // Banki szinkron mock a valós banki API-ig.
+        services.AddSingleton<Szakuzlet.Infrastructure.Banking.MockBankClient>();
+        services.AddSingleton<Szakuzlet.Application.Banking.IBankClient>(
+            sp => sp.GetRequiredService<Szakuzlet.Infrastructure.Banking.MockBankClient>());
+
+        // Kifizetés-export (SEPA/XML + Posta) mock a valós integrációkig.
+        services.AddSingleton<Szakuzlet.Infrastructure.Banking.MockPayoutExporter>();
+        services.AddSingleton<Szakuzlet.Application.Banking.IPayoutExporter>(
+            sp => sp.GetRequiredService<Szakuzlet.Infrastructure.Banking.MockPayoutExporter>());
+
+        // eIDAS aláírás, dokumentum-generátor és OCR mockok a valós szolgáltatókig.
+        services.AddSingleton<Szakuzlet.Infrastructure.Signing.MockSignatureService>();
+        services.AddSingleton<Szakuzlet.Application.Signing.ISignatureService>(
+            sp => sp.GetRequiredService<Szakuzlet.Infrastructure.Signing.MockSignatureService>());
+        services.AddSingleton<Szakuzlet.Application.Documents.IDocumentGenerator,
+            Szakuzlet.Infrastructure.Documents.MockDocumentGenerator>();
+        services.AddSingleton<Szakuzlet.Application.Documents.IOcrService,
+            Szakuzlet.Infrastructure.Documents.MockOcrService>();
 
         // Hiteles e-számlázás (Számlázz.hu) mock a valós API-ig.
         services.AddSingleton<Szakuzlet.Application.Billing.IEInvoiceClient,

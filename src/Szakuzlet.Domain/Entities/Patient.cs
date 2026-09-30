@@ -54,6 +54,7 @@ public class Patient
     public ICollection<Order> Orders { get; set; } = new List<Order>();
     public ICollection<PatientPhone> Phones { get; set; } = new List<PatientPhone>();
     public ICollection<Shipment> Shipments { get; set; } = new List<Shipment>();
+    public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 
     /// <summary>Philips-csereprojekt adata, ha a beteg érintett. Null, ha nem.</summary>
     public PhilipsReplacement? PhilipsReplacement { get; set; }

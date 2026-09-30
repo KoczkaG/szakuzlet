@@ -29,6 +29,11 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<DataCompletionRequest> DataCompletionRequests => Set<DataCompletionRequest>();
     public DbSet<HealthFund> HealthFunds => Set<HealthFund>();
     public DbSet<EanCode> EanCodes => Set<EanCode>();
+    public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<ExpressIntake> ExpressIntakes => Set<ExpressIntake>();
+    public DbSet<PostalTrial> PostalTrials => Set<PostalTrial>();
+    public DbSet<EducationVideo> EducationVideos => Set<EducationVideo>();
+    public DbSet<EducationAcknowledgement> EducationAcknowledgements => Set<EducationAcknowledgement>();
 
     Task<int> IAppDbContext.SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
 
@@ -269,6 +274,70 @@ public class AppDbContext : DbContext, IAppDbContext
             e.Property(x => x.Code).IsRequired().HasMaxLength(60);
             e.HasIndex(x => x.Code).IsUnique();
             e.HasIndex(x => x.Used);
+        });
+
+        b.Entity<EducationVideo>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.ProductModel).IsRequired().HasMaxLength(200);
+            e.Property(x => x.Title).IsRequired().HasMaxLength(200);
+            e.Property(x => x.Url).IsRequired().HasMaxLength(500);
+            e.HasIndex(x => x.ProductModel);
+        });
+
+        b.Entity<EducationAcknowledgement>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Products).HasMaxLength(500);
+            e.Property(x => x.FromIp).HasMaxLength(64);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<PostalTrial>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.OrderNumber).IsRequired().HasMaxLength(50);
+            e.Property(x => x.DeviceModel).HasMaxLength(200);
+            e.Property(x => x.MaskModel).HasMaxLength(200);
+            e.Property(x => x.PayableAmount).HasColumnType("numeric(12,2)");
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.OrderNumber).IsUnique();
+            e.HasIndex(x => x.Status);
+        });
+
+        b.Entity<ExpressIntake>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.RequesterName).HasMaxLength(200);
+            e.Property(x => x.RequesterPhone).HasMaxLength(30);
+            e.Property(x => x.RequesterEmail).HasMaxLength(256);
+            e.Property(x => x.DeviceModel).HasMaxLength(200);
+            e.Property(x => x.MaskModel).HasMaxLength(200);
+            e.Property(x => x.PayableAmount).HasColumnType("numeric(12,2)");
+            e.Property(x => x.PressureCmH2O).HasColumnType("numeric(5,2)");
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.Status);
+        });
+
+        b.Entity<Contract>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Number).IsRequired().HasMaxLength(50);
+            e.Property(x => x.DeviceModel).IsRequired().HasMaxLength(200);
+            e.Property(x => x.DeviceSerialNumber).IsRequired().HasMaxLength(100);
+            e.Property(x => x.MaskModel).HasMaxLength(200);
+            e.Property(x => x.PdfReference).HasMaxLength(300);
+            e.Property(x => x.ScannedReference).HasMaxLength(300);
+            e.Property(x => x.SignedFromIp).HasMaxLength(64);
+            e.Property(x => x.DepositAmount).HasColumnType("numeric(12,2)");
+            e.Property(x => x.PressureCmH2O).HasColumnType("numeric(5,2)");
+            e.HasOne(x => x.Patient).WithMany(p => p.Contracts)
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.Number).IsUnique();
+            e.HasIndex(x => x.Status);
         });
     }
 }
