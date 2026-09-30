@@ -34,7 +34,24 @@ public static class DataSeeder
                 Referral("Magánrendelő – SomnoMed", "Dr. Tóth Gábor"));
             await db.SaveChangesAsync(ct);
         }
+
+        if (!await db.HealthFunds.AnyAsync(ct))
+        {
+            db.HealthFunds.AddRange(
+                Fund("OTP Egészségpénztár", strict: false, null, null),
+                Fund("MKB Egészségpénztár", strict: false, null, null),
+                // Szigorú EP: kizárólag saját székhelyre és adószámra.
+                Fund("Prémium Egészségpénztár", strict: true,
+                    "1051 Budapest, Pénztár utca 5.", "18000000-2-41"));
+            await db.SaveChangesAsync(ct);
+        }
     }
+
+    private static HealthFund Fund(string name, bool strict, string? address, string? taxNumber) => new()
+    {
+        Id = Guid.NewGuid(), Name = name, StrictBilling = strict,
+        OfficialAddress = address, TaxNumber = taxNumber, IsActive = true
+    };
 
     private static ReferralSource Referral(string name, string? doctor) => new()
     {

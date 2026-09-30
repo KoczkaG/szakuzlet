@@ -28,6 +28,8 @@ public interface IAppDbContext
     DbSet<CallNote> CallNotes { get; }
     DbSet<ReferralSource> ReferralSources { get; }
     DbSet<DataCompletionRequest> DataCompletionRequests { get; }
+    DbSet<HealthFund> HealthFunds { get; }
+    DbSet<EanCode> EanCodes { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

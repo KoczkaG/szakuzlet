@@ -1,0 +1,205 @@
+@page "/szamlazas"
+@using Szakuzlet.Application.Billing
+@using Szakuzlet.Application.Patients
+@using Szakuzlet.Domain.Entities
+@using Szakuzlet.Domain.Enums
+@inject PatientLookupService Lookup
+@inject BillingService BillingSvc
+@rendermode InteractiveServer
+
+<PageTitle>Pulti számlázás</PageTitle>
+
+<div class="desk">
+    <header class="desk-head">
+        <h1>Pulti számlázás</h1>
+        <p>Ügyfél előhívása, tétel, adónem és fizetési mód, majd véglegesítés (terminál-védőhálóval).</p>
+    </header>
+
+    @if (_invoiceId is null)
+    {
+        <div class="desk-search">
+            <label>Születési dátum</label>
+            <input type="date" @bind="_dob" class="ds-input" />
+            <button class="ds-submit" @onclick="Search" disabled="@_searching">
+                @(_searching ? "Keresés…" : "Ügyfél előhívása")
+            </button>
+
+            @if (_matches is not null)
+            {
+                <ul class="desk-matches">
+                    @foreach (var m in _matches)
+                    {
+                        <li><button class="desk-match" @onclick="() => StartInvoice(m)">
+                            <span class="desk-match-name">@m.FullName</span></button></li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+    else if (!_finalized)
+    {
+        <div class="ds-section">
+            <h3>Számla: @_invoiceNumber — @_patientName</h3>
+            <p class="ds-hint">Tétel: @_lineName ×@_lineQty</p>
+
+            <div class="ds-field">
+                <label>Adónem</label>
+                <select class="ds-input" @bind="_category" @bind:after="OnCategoryChanged">
+                    <option value="Maganszemely">Magánszemély</option>
+                    <option value="BelfoldiAdoalany">Belföldi jogi személy (céges)</option>
+                    <option value="Egeszsegpenztar">Egészségpénztár</option>
+                </select>
+            </div>
+
+            @if (_category == "BelfoldiAdoalany")
+            {
+                <div class="ds-field"><label>Cégnév</label><input class="ds-input" @bind="_coName" /></div>
+                <div class="ds-field"><label>Adószám</label><input class="ds-input" @bind="_coTax" /></div>
+                <div class="ds-field"><label>Székhely</label><input class="ds-input" @bind="_coAddr" /></div>
+                <button class="ds-submit" @onclick="ApplyCompany">Céges adatok mentése</button>
+            }
+            else if (_category == "Egeszsegpenztar")
+            {
+                <div class="ds-field">
+                    <label>Egészségpénztár</label>
+                    <select class="ds-input" @bind="_fundId">
+                        <option value="">– válasszon –</option>
+                        @foreach (var f in _funds)
+                        {
+                            <option value="@f.Id">@f.Name @(f.StrictBilling ? "(szigorú)" : "")</option>
+                        }
+                    </select>
+                </div>
+                <div class="ds-field"><label>Tagi azonosító</label><input class="ds-input" @bind="_epMember" /></div>
+                <div class="ds-field"><label>Kedvezményezett (opcionális)</label><input class="ds-input" @bind="_epBenef" /></div>
+                <button class="ds-submit" @onclick="ApplyEp">EP adatok mentése</button>
+                @if (_strictWarning)
+                {
+                    <div class="mdp-alert">
+                        FIGYELEM! Ez az egészségpénztár kizárólag adószámmal és a saját címével fogadja be
+                        a számlát! A rendszer a kategóriát automatikusan átállította.
+                    </div>
+                }
+            }
+
+            <hr />
+            <label class="ds-check"><input type="checkbox" @bind="_isPrescription" /> Vényes értékesítés (EAN-kód)</label>
+            <div class="ds-field">
+                <label>Fizetési mód</label>
+                <select class="ds-input" @bind="_payment">
+                    <option value="Keszpenz">Készpénz</option>
+                    <option value="Bankkartya">Bankkártya</option>
+                    <option value="Atutalas">Átutalás</option>
+                    <option value="PostaiUtanvet">Postai utánvét</option>
+                </select>
+            </div>
+            @if (_payment == "Bankkartya")
+            {
+                <div class="ds-field"><label>Kártyás összeg (Ft)</label>
+                    <input type="number" class="ds-input" @bind="_cardAmount" /></div>
+            }
+
+            @if (_error is not null) { <div class="desk-alert">@_error</div> }
+            <button class="ds-submit" @onclick="Finalize" disabled="@_busy">
+                @(_busy ? "Feldolgozás…" : "Számla véglegesítése")
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="portal-done">
+            <h2>Számla kiállítva</h2>
+            <p>@_finalMessage</p>
+            <button class="ds-submit" @onclick="Reset">Új számla</button>
+        </div>
+    }
+</div>
+
+@code {
+    private DateTime? _dob;
+    private bool _searching;
+    private IReadOnlyList<PatientMatch>? _matches;
+
+    private Guid? _invoiceId;
+    private string _invoiceNumber = "";
+    private string _patientName = "";
+    private string _lineName = "";
+    private int _lineQty = 1;
+
+    private string _category = "Maganszemely";
+    private string? _coName, _coTax, _coAddr;
+    private List<HealthFund> _funds = new();
+    private string? _fundId, _epMember, _epBenef;
+    private bool _strictWarning;
+
+    private bool _isPrescription;
+    private string _payment = "Keszpenz";
+    private decimal _cardAmount;
+
+    private bool _busy, _finalized;
+    private string? _error;
+    private string _finalMessage = "";
+
+    protected override async Task OnInitializedAsync() => _funds = await BillingSvc.GetHealthFundsAsync();
+
+    private async Task Search()
+    {
+        if (_dob is null) return;
+        _searching = true;
+        _matches = (await Lookup.FindByDateOfBirthAsync(DateOnly.FromDateTime(_dob.Value))).Matches;
+        _searching = false;
+    }
+
+    private async Task StartInvoice(PatientMatch m)
+    {
+        // Demó tétel; éles felületen a kosárból jönne.
+        var inv = await BillingSvc.CreateDraftAsync(m.PatientId, new[] { ((string?)"BAKT", "Baktériumszűrő", 2) });
+        _invoiceId = inv.Id;
+        _invoiceNumber = inv.Number;
+        _patientName = m.FullName;
+        _lineName = "Baktériumszűrő"; _lineQty = 2;
+    }
+
+    private void OnCategoryChanged() => _strictWarning = false;
+
+    private async Task ApplyCompany()
+    {
+        _error = null;
+        await BillingSvc.SwitchToCompanyAsync(_invoiceId!.Value,
+            new CompanyBilling(_coName ?? "", _coTax ?? "", _coAddr ?? ""));
+    }
+
+    private async Task ApplyEp()
+    {
+        _error = null;
+        if (!Guid.TryParse(_fundId, out var fid)) { _error = "Válasszon egészségpénztárat."; return; }
+        _strictWarning = await BillingSvc.SwitchToEpAsync(_invoiceId!.Value,
+            new EpBilling(fid, _epMember ?? "", _epBenef));
+    }
+
+    private async Task Finalize()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            await BillingSvc.MarkPrescriptionAsync(_invoiceId!.Value, _isPrescription);
+            await BillingSvc.SetPaymentMethodAsync(_invoiceId.Value, Enum.Parse<PaymentMethod>(_payment));
+            var printNeeded = await BillingSvc.FinalizeAsync(_invoiceId.Value,
+                _payment == "Bankkartya" ? _cardAmount : null);
+            _finalMessage = printNeeded
+                ? "A számla kiállítva – helyi nyomtatás szükséges (nincs e-mail cím)."
+                : "A számla kiállítva és digitálisan kiküldve.";
+            _finalized = true;
+        }
+        catch (InvalidOperationException ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+
+    private void Reset()
+    {
+        _invoiceId = null; _finalized = false; _matches = null; _dob = null;
+        _category = "Maganszemely"; _isPrescription = false; _payment = "Keszpenz";
+        _strictWarning = false; _error = null;
+    }
+}
