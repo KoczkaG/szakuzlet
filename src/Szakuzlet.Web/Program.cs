@@ -48,4 +48,7 @@ app.MapRazorComponents<App>()
 // A telefonközpont (külső VoIP) REST végpontjai.
 app.MapCallCenterApi();
 
+// Logisztika, Timeline és Philips-import végpontok.
+app.MapLogisticsApi();
+
 app.Run();

@@ -21,6 +21,9 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<CallRecord> Calls => Set<CallRecord>();
     public DbSet<CallbackRequest> Callbacks => Set<CallbackRequest>();
     public DbSet<PatientPhone> Phones => Set<PatientPhone>();
+    public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
+    public DbSet<Shipment> Shipments => Set<Shipment>();
+    public DbSet<PhilipsReplacement> PhilipsReplacements => Set<PhilipsReplacement>();
 
     Task<int> IAppDbContext.SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
 
@@ -171,6 +174,36 @@ public class AppDbContext : DbContext, IAppDbContext
             e.Property(x => x.ContactName).HasMaxLength(200);
             e.HasOne(x => x.Patient).WithMany(p => p.Phones)
                 .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<InvoiceLine>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.ItemCode).HasMaxLength(50);
+            e.Property(x => x.ProductName).IsRequired().HasMaxLength(300);
+            e.HasOne(x => x.Invoice).WithMany(i => i.Lines)
+                .HasForeignKey(x => x.InvoiceId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Shipment>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.TrackingNumber).IsRequired().HasMaxLength(60);
+            e.Property(x => x.ReceivedBy).HasMaxLength(200);
+            e.HasOne(x => x.Patient).WithMany(p => p.Shipments)
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.TrackingNumber);
+        });
+
+        b.Entity<PhilipsReplacement>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.ReplacementModel).IsRequired().HasMaxLength(200);
+            e.Property(x => x.SerialNumber).IsRequired().HasMaxLength(100);
+            // Egy beteghez legfeljebb egy csereprojekt-adat.
+            e.HasOne(x => x.Patient).WithOne(p => p.PhilipsReplacement)
+                .HasForeignKey<PhilipsReplacement>(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.SerialNumber);
         });
     }
 }

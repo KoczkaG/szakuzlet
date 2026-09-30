@@ -121,3 +121,17 @@ h1:focus {
 .call-suspicion p { background:#f5f9ff; border-radius:6px; padding:.75rem 1rem; margin-top:.5rem; }
 .call-actions { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; margin-top:.5rem; }
 .call-stop { background:#b02a2a; }
+
+.philips-alert { background:#b02a2a; color:#fff; padding:1rem 1.25rem; border-radius:8px;
+    font-weight:600; margin:1rem 0; }
+.tl-list { list-style:none; padding:0; margin:.5rem 0 0; border-left:3px solid #cfe0f5; }
+.tl-item { display:flex; gap:1rem; padding:.6rem 0 .6rem 1rem; position:relative; }
+.tl-item::before { content:""; position:absolute; left:-7px; top:1rem; width:11px; height:11px;
+    border-radius:50%; background:#1b6ec2; }
+.tl-date { min-width:130px; color:#666; font-size:.85rem; }
+.tl-cat { display:inline-block; font-size:.7rem; text-transform:uppercase; letter-spacing:.03em;
+    background:#eef4fc; color:#1b6ec2; padding:.1rem .45rem; border-radius:10px; margin-right:.5rem; }
+.tl-title { font-weight:600; }
+.tl-detail { color:#444; font-size:.9rem; margin-top:.15rem; }
+.tl-számla::before { background:#0a7d33; }
+.tl-csomag::before { background:#c77700; }

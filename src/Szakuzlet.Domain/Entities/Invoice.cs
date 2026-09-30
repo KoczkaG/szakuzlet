@@ -24,4 +24,7 @@ public class Invoice
     public DateTimeOffset? ParkingExpiresAtUtc { get; set; }
 
     public DateTimeOffset? SentAtUtc { get; set; }
+
+    /// <summary>A számla tételei (termék/modellnév a Timeline-hoz).</summary>
+    public ICollection<InvoiceLine> Lines { get; set; } = new List<InvoiceLine>();
 }

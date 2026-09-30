@@ -54,6 +54,18 @@ alapján épül fel, moduláris megközelítéssel.
 - **Módosíthatatlan Audit Trail** a rögzítés leállításakor (idő, kezelő, ok).
 - **REST API** (`/api/outbound/...`) és **Click-to-Call UI** (`/hivasok`).
 
+**I. Modul / D) – Központi Ügyféltörténet Idővonal (Timeline)**
+
+- **Egységes, időrendi Timeline** (`TimelineService`), amely összefésüli az adatszigeteket:
+  - pénzügyi számlák **a konkrét termék-/modellnévvel** (`InvoiceLine`), nem csak sorszámmal
+  - logisztikai csomagstátuszok (Feladva / Kézbesítés alatt / Sikertelen / Átvéve)
+  - kommunikációs és szerviz-események (a `TimelineEvent`-ekből, amelyeket az A/B/C tölt)
+- **Élő futár-szinkron** (`ICourierClient`, GLS/MPL) absztrakció mögött, mockkal; a nyitott
+  csomagok státusza frissül, státuszváltáskor Timeline-esemény keletkezik.
+- **Philips-csereprojekt import** (CSV, TAJ- majd névillesztéssel) és **automata piros riasztás**
+  a beteg megnyitásakor (modell + gyári szám).
+- **UI** (`/idovonal`): görgethető, kategorizált idővonal + Philips-riasztás sáv.
+
 ## Architektúra
 
 Réteges felépítés, hogy a KVL vállalatirányítási rendszer API-jaira később
@@ -121,6 +133,13 @@ ASPNETCORE_ENVIRONMENT=Development dotnet run --project src/Szakuzlet.Web
 - `POST /api/outbound/start` – kimenő hívás indítása (adatlap-kontextus + GDPR sablon)
 - `POST /api/outbound/{callId}/stop-recording` – hangrögzítés leállítása + Audit Trail
 - `POST /api/outbound/{callId}/end` – kimenő hívás vége
+
+### Logisztika / Timeline / Philips REST API
+
+- `POST /api/shipments` – csomag feladása
+- `POST /api/shipments/sync` – nyitott csomagok státuszszinkronja a futár-API-ból
+- `GET  /api/patients/{patientId}/timeline` – a beteg teljes idővonala
+- `POST /api/philips/import` – Philips-csereprojekt CSV import (text/csv törzs)
 
 ## Tesztek
 

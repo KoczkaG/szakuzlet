@@ -1,4 +1,5 @@
 using Szakuzlet.Application.Invoices;
+using Szakuzlet.Application.Logistics;
 using Szakuzlet.Application.WearExpiry;
 
 namespace Szakuzlet.Web.BackgroundJobs;
@@ -37,14 +38,17 @@ public sealed class AutomationWorker : BackgroundService
                 using var scope = _scopeFactory.CreateScope();
                 var parking = scope.ServiceProvider.GetRequiredService<InvoiceParkingService>();
                 var wear = scope.ServiceProvider.GetRequiredService<WearExpiryService>();
+                var shipments = scope.ServiceProvider.GetRequiredService<ShipmentService>();
 
                 var closed = await parking.CloseExpiredParkingsAsync(stoppingToken);
                 var notified = await wear.RunAsync(stoppingToken);
+                var shipmentUpdates = await shipments.SyncOpenShipmentsAsync(stoppingToken);
 
-                if (closed > 0 || notified > 0)
+                if (closed > 0 || notified > 0 || shipmentUpdates > 0)
                     _logger.LogInformation(
-                        "Automatizmus lefutott: {Closed} parkoltatás lezárva, {Notified} kihordási értesítő.",
-                        closed, notified);
+                        "Automatizmus lefutott: {Closed} parkoltatás lezárva, {Notified} kihordási értesítő, " +
+                        "{Shipments} csomagstátusz frissítve.",
+                        closed, notified, shipmentUpdates);
             }
             catch (OperationCanceledException) { break; }
             catch (Exception ex)

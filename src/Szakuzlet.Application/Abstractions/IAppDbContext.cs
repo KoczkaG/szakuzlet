@@ -22,6 +22,9 @@ public interface IAppDbContext
     DbSet<CallRecord> Calls { get; }
     DbSet<CallbackRequest> Callbacks { get; }
     DbSet<PatientPhone> Phones { get; }
+    DbSet<InvoiceLine> InvoiceLines { get; }
+    DbSet<Shipment> Shipments { get; }
+    DbSet<PhilipsReplacement> PhilipsReplacements { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

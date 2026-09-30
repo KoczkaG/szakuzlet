@@ -70,6 +70,15 @@ public static class DependencyInjection
         services.AddScoped<Szakuzlet.Application.CallCenter.CallCenterService>();
         services.AddScoped<Szakuzlet.Application.CallCenter.OutboundCallService>();
 
+        // Futár-szinkron (GLS/MPL) mock a valós API-kig.
+        services.AddSingleton<Szakuzlet.Infrastructure.Logistics.MockCourierClient>();
+        services.AddSingleton<Szakuzlet.Application.Logistics.ICourierClient>(
+            sp => sp.GetRequiredService<Szakuzlet.Infrastructure.Logistics.MockCourierClient>());
+
+        services.AddScoped<Szakuzlet.Application.Timeline.TimelineService>();
+        services.AddScoped<Szakuzlet.Application.Logistics.ShipmentService>();
+        services.AddScoped<Szakuzlet.Application.Philips.PhilipsImportService>();
+
         return services;
     }
 }

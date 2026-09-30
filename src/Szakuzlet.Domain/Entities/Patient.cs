@@ -53,6 +53,10 @@ public class Patient
     public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
     public ICollection<Order> Orders { get; set; } = new List<Order>();
     public ICollection<PatientPhone> Phones { get; set; } = new List<PatientPhone>();
+    public ICollection<Shipment> Shipments { get; set; } = new List<Shipment>();
+
+    /// <summary>Philips-csereprojekt adata, ha a beteg érintett. Null, ha nem.</summary>
+    public PhilipsReplacement? PhilipsReplacement { get; set; }
 
     /// <summary>
     /// Igaz, ha bármelyik kötelező kontaktmező (e-mail, mobil, TAJ) hiányzik.
