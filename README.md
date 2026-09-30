@@ -5,7 +5,7 @@ alapján épül fel, moduláris megközelítéssel.
 
 ## Megvalósított rész
 
-**I. Modul / A) – Online GDPR és Adatlap-kitöltő Rendszer** (mag)
+**I. Modul / A) – Online GDPR és Adatlap-kitöltő Rendszer** (teljes)
 
 - Távoli páciens-portál (e-mail/SMS linkes, token alapú kitöltés)
 - Helyszíni (pulti/tabletes) kitöltés régi ügyfél diszkrét előhívásával
@@ -14,6 +14,15 @@ alapján épül fel, moduláris megközelítéssel.
 - Jogi bizonyíték rögzítése véglegesítéskor (időbélyeg + IP), módosíthatatlan audit-napló
 - A 4 kötelező hozzájárulási kérdés rögzítése
 - KVL felé történő profil-visszaírás (jelenleg mock kliens mögött)
+- **„Zéró hozzájárulás” és számla-parkoltatási radar**: ha nincs postai/e-mail
+  hozzájárulás, a számla parkolva marad (1 hónap), pulti feladat generálódik, és az
+  egyeztetés kimenetelei (téves kitöltés / személyes átvétel / időzített lezárás) kezeltek
+- **Kihordási idő automatizmus**: lejáratkor automatikus értesítő (csak hozzájárulással)
+- **„Félig kész” postai rendelések + adatpótlási protokoll**: hiányos kontakt esetén
+  zárolás, adatpótló link, majd aktiválás; lezáráskor rendszerüzenet + számla
+- **Ügyfél-idővonal (Timeline/History)** minden fő eseményre
+- **Pulti áttekintő (Dashboard)**: nyitott feladatok, parkoltatott számlák, függő rendelések
+- **Ütemezett automatizmusok** (háttérfolyamat): parkoltatás-lezárás, kihordási értesítők
 
 ## Architektúra
 
@@ -61,7 +70,9 @@ ASPNETCORE_ENVIRONMENT=Development dotnet run --project src/Szakuzlet.Web
 
 - Kezdőlap: `/`
 - Pulti kiszolgálás: `/pult`
+- Pulti áttekintő (Dashboard): `/dashboard`
 - Páciens-portál: `/adatlap/{token}` (a linket a kezdőlap „Demo link” gombja generálja)
+- Rendelés-adatpótlás: `/rendeles-adatpotlas/{token}`
 
 ## Tesztek
 

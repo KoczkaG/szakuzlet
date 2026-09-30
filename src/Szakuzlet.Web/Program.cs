@@ -12,6 +12,9 @@ builder.Services.AddRazorComponents()
 // Belső szoftver rétegei (EF Core + PostgreSQL, KVL mock, szolgáltatások).
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Ütemezett automatizmusok (parkoltatás-lezárás, kihordási idő értesítők).
+builder.Services.AddHostedService<Szakuzlet.Web.BackgroundJobs.AutomationWorker>();
+
 var app = builder.Build();
 
 // Séma előállítása indításkor. PostgreSQL alatt verziózott migrációk (éles),

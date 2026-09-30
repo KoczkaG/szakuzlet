@@ -36,9 +36,22 @@ public class Patient
     /// <summary>Régi (a KVL-ből importált) ügyfél-e. Befolyásolja a portál viselkedését.</summary>
     public bool IsLegacy { get; set; }
 
+    /// <summary>A termék vásárlásának dátuma – a kihordási idő automatizmus kiindulópontja (feladatlista 9. pont).</summary>
+    public DateOnly? LastPurchaseDate { get; set; }
+
+    /// <summary>A termék kihordási ideje hónapban (pl. maszk). Ebből számol a lejárati értesítő.</summary>
+    public int? ProductWearMonths { get; set; }
+
+    /// <summary>Elküldtük-e már a kihordási idő lejáratáról szóló értesítőt (duplikáció elkerülése).</summary>
+    public bool WearExpiryNotified { get; set; }
+
     // --- Navigációk ---
     public ICollection<DataSheet> DataSheets { get; set; } = new List<DataSheet>();
     public ICollection<ConsentRecord> Consents { get; set; } = new List<ConsentRecord>();
+    public ICollection<TimelineEvent> TimelineEvents { get; set; } = new List<TimelineEvent>();
+    public ICollection<PatientTask> Tasks { get; set; } = new List<PatientTask>();
+    public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+    public ICollection<Order> Orders { get; set; } = new List<Order>();
 
     /// <summary>
     /// Igaz, ha bármelyik kötelező kontaktmező (e-mail, mobil, TAJ) hiányzik.

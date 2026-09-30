@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Szakuzlet.Application.Abstractions;
+using Szakuzlet.Application.Common;
 using Szakuzlet.Application.Kvl;
 using Szakuzlet.Domain.Entities;
 using Szakuzlet.Domain.Enums;
@@ -17,16 +18,19 @@ public sealed class DataSheetService
     private readonly IClock _clock;
     private readonly ITokenGenerator _tokens;
     private readonly IKvlClient _kvl;
+    private readonly EventRecorder _events;
 
     // A kiküldött link alapértelmezett élettartama.
     private static readonly TimeSpan TokenLifetime = TimeSpan.FromDays(14);
 
-    public DataSheetService(IAppDbContext db, IClock clock, ITokenGenerator tokens, IKvlClient kvl)
+    public DataSheetService(IAppDbContext db, IClock clock, ITokenGenerator tokens,
+        IKvlClient kvl, EventRecorder events)
     {
         _db = db;
         _clock = clock;
         _tokens = tokens;
         _kvl = kvl;
+        _events = events;
     }
 
     /// <summary>
@@ -144,6 +148,8 @@ public sealed class DataSheetService
         AddAudit("DataSheet", sheet.Id.ToString(), "AdatlapVeglegesitve",
             "Aktív jelölőnégyzet-kiválasztás; jogilag egyenértékű a kézi aláírással.",
             "PACIENS", context.IpAddress, now);
+        _events.Timeline(patient.Id, "AdatlapVeglegesitve",
+            $"Digitális adatlap véglegesítve ({sheet.Channel}).");
 
         // Visszaírás a KVL-be (mock most, valós API később).
         var kvlDto = new KvlPartnerDto

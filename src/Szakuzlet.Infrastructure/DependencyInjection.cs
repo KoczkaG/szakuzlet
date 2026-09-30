@@ -2,10 +2,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Szakuzlet.Application.Abstractions;
+using Szakuzlet.Application.Common;
 using Szakuzlet.Application.DataSheets;
+using Szakuzlet.Application.Invoices;
 using Szakuzlet.Application.Kvl;
+using Szakuzlet.Application.Notifications;
+using Szakuzlet.Application.Orders;
 using Szakuzlet.Application.Patients;
+using Szakuzlet.Application.WearExpiry;
 using Szakuzlet.Infrastructure.Kvl;
+using Szakuzlet.Infrastructure.Notifications;
 using Szakuzlet.Infrastructure.Persistence;
 using Szakuzlet.Infrastructure.Services;
 
@@ -42,9 +48,19 @@ public static class DependencyInjection
         // A valós KVL API elkészültéig mock. Cseréje: egyetlen sor módosítása.
         services.AddSingleton<IKvlClient, MockKvlClient>();
 
+        // A valós SMS/e-mail szolgáltató elkészültéig memóriában naplózó küldő.
+        // Singleton, hogy a demó/teszt vissza tudja olvasni a kiment üzeneteket.
+        services.AddSingleton<InMemoryNotificationSender>();
+        services.AddSingleton<INotificationSender>(sp => sp.GetRequiredService<InMemoryNotificationSender>());
+
         // Application szolgáltatások.
+        services.AddScoped<EventRecorder>();
+        services.AddScoped<Szakuzlet.Application.Dashboard.DashboardService>();
         services.AddScoped<DataSheetService>();
         services.AddScoped<PatientLookupService>();
+        services.AddScoped<InvoiceParkingService>();
+        services.AddScoped<OrderCompletionService>();
+        services.AddScoped<WearExpiryService>();
 
         return services;
     }
