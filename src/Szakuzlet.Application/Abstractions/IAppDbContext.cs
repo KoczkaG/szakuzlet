@@ -31,6 +31,7 @@ public interface IAppDbContext
     DbSet<HealthFund> HealthFunds { get; }
     DbSet<EanCode> EanCodes { get; }
     DbSet<Contract> Contracts { get; }
+    DbSet<ExpressIntake> ExpressIntakes { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

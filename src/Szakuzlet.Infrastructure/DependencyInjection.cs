@@ -77,6 +77,7 @@ public static class DependencyInjection
         services.AddScoped<Szakuzlet.Application.Billing.EanPoolService>();
         services.AddScoped<Szakuzlet.Application.Billing.SettlementService>();
         services.AddScoped<Szakuzlet.Application.Contracts.ContractService>();
+        services.AddScoped<Szakuzlet.Application.Express.ExpressIntakeService>();
 
         // eIDAS aláírás, dokumentum-generátor és OCR mockok a valós szolgáltatókig.
         services.AddSingleton<Szakuzlet.Infrastructure.Signing.MockSignatureService>();

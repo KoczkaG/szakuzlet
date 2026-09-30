@@ -30,6 +30,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<HealthFund> HealthFunds => Set<HealthFund>();
     public DbSet<EanCode> EanCodes => Set<EanCode>();
     public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<ExpressIntake> ExpressIntakes => Set<ExpressIntake>();
 
     Task<int> IAppDbContext.SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
 
@@ -270,6 +271,21 @@ public class AppDbContext : DbContext, IAppDbContext
             e.Property(x => x.Code).IsRequired().HasMaxLength(60);
             e.HasIndex(x => x.Code).IsUnique();
             e.HasIndex(x => x.Used);
+        });
+
+        b.Entity<ExpressIntake>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.RequesterName).HasMaxLength(200);
+            e.Property(x => x.RequesterPhone).HasMaxLength(30);
+            e.Property(x => x.RequesterEmail).HasMaxLength(256);
+            e.Property(x => x.DeviceModel).HasMaxLength(200);
+            e.Property(x => x.MaskModel).HasMaxLength(200);
+            e.Property(x => x.PayableAmount).HasColumnType("numeric(12,2)");
+            e.Property(x => x.PressureCmH2O).HasColumnType("numeric(5,2)");
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.Status);
         });
 
         b.Entity<Contract>(e =>
