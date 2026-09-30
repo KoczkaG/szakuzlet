@@ -1,0 +1,129 @@
+@using Szakuzlet.Web.Models
+@inject IPostalCodeLookup PostalCodeLookup
+
+<EditForm Model="Form" OnValidSubmit="HandleSubmit" FormName="datasheet">
+    <DataAnnotationsValidator />
+
+    <div class="ds-section">
+        <h3>Személyes adatok</h3>
+
+        <div class="ds-field">
+            <label>Név *</label>
+            <InputText @bind-Value="Form.FullName" class="ds-input" />
+            <ValidationMessage For="() => Form.FullName" />
+        </div>
+
+        <div class="ds-field">
+            <label>Születési dátum *</label>
+            <InputDate @bind-Value="Form.DateOfBirth" class="ds-input" />
+            <ValidationMessage For="() => Form.DateOfBirth" />
+        </div>
+
+        <div class="ds-field">
+            <label>TAJ-szám</label>
+            <InputText @bind-Value="Form.TajNumber" class="ds-input" placeholder="pl. 123 456 789" />
+        </div>
+    </div>
+
+    <div class="ds-section">
+        <h3>Kapcsolattartás</h3>
+
+        <div class="ds-field">
+            <label>Mobiltelefonszám *</label>
+            <InputText @bind-Value="Form.MobilePhone" class="ds-input" placeholder="+36 30 123 4567" />
+            <ValidationMessage For="() => Form.MobilePhone" />
+        </div>
+
+        <div class="ds-field">
+            <label>E-mail cím</label>
+            <InputText @bind-Value="Form.Email" class="ds-input" />
+            <ValidationMessage For="() => Form.Email" />
+        </div>
+    </div>
+
+    <div class="ds-section">
+        <h3>Cím</h3>
+
+        <div class="ds-field">
+            <label>Irányítószám</label>
+            <InputText @bind-Value="Form.PostalCode" @bind-Value:after="OnPostalCodeChanged"
+                       class="ds-input" placeholder="pl. 1145" />
+            @if (_postalHint is not null)
+            {
+                <span class="ds-hint">@_postalHint</span>
+            }
+        </div>
+
+        <div class="ds-field">
+            <label>Település</label>
+            <InputText @bind-Value="Form.City" class="ds-input" />
+        </div>
+
+        <div class="ds-field">
+            <label>Cím (utca, házszám)</label>
+            <InputText @bind-Value="Form.AddressLine" class="ds-input" />
+        </div>
+    </div>
+
+    <div class="ds-section">
+        <h3>Adatkezelési hozzájárulások</h3>
+        <p class="ds-legal">
+            A jelölőnégyzetek kiválasztása és az űrlap beküldése jogilag egyenértékű a kézi aláírással.
+            A rendszer a jóváhagyás pontos időbélyegét és IP-címét rögzíti.
+        </p>
+
+        <label class="ds-check">
+            <InputCheckbox @bind-Value="Form.ConsentKihordasiIdo" />
+            Kérem a tájékoztatást a termék kihordási idejének lejáratáról.
+        </label>
+        <label class="ds-check">
+            <InputCheckbox @bind-Value="Form.ConsentHirlevel" />
+            Feliratkozom a hírlevélre (marketing üzenetek).
+        </label>
+        <label class="ds-check">
+            <InputCheckbox @bind-Value="Form.ConsentPostai" />
+            Hozzájárulok a postai úton történő tájékoztatáshoz.
+        </label>
+        <label class="ds-check">
+            <InputCheckbox @bind-Value="Form.ConsentEmail" />
+            Hozzájárulok az e-mailes tájékoztatáshoz.
+        </label>
+    </div>
+
+    <button type="submit" class="ds-submit" disabled="@Submitting">
+        @(Submitting ? "Mentés…" : SubmitLabel)
+    </button>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired] public DataSheetForm Form { get; set; } = new();
+    [Parameter] public string SubmitLabel { get; set; } = "Beküldés";
+    [Parameter] public bool Submitting { get; set; }
+    [Parameter] public EventCallback OnSubmit { get; set; }
+
+    private string? _postalHint;
+
+    private async Task OnPostalCodeChanged()
+    {
+        _postalHint = null;
+        if (string.IsNullOrWhiteSpace(Form.PostalCode)) return;
+
+        var cities = await PostalCodeLookup.GetCitiesAsync(Form.PostalCode);
+        if (cities.Count == 1)
+        {
+            // Intelligens cím-adatbázis: automatikus településkitöltés.
+            Form.City = cities[0];
+            _postalHint = $"Település automatikusan kitöltve: {cities[0]}";
+        }
+        else if (cities.Count > 1)
+        {
+            _postalHint = "Több település tartozik ehhez az irányítószámhoz, kérjük válasszon.";
+        }
+        else
+        {
+            _postalHint = "Ismeretlen irányítószám – kérjük, adja meg a települést kézzel.";
+        }
+    }
+
+    private Task HandleSubmit() => OnSubmit.InvokeAsync();
+}

@@ -1,0 +1,60 @@
+@page "/"
+@inject DataSheetService DataSheets
+@inject PatientLookupService Lookup
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>SOMNO SHOP – Belső rendszer</PageTitle>
+
+<div class="home">
+    <h1>SOMNO SHOP – Belső szoftver</h1>
+    <p class="home-lead">
+        I. Modul / A) – Online GDPR és Adatlap-kitöltő Rendszer.
+        A papíralapú adatgyűjtést váltja ki távoli (online) és helyszíni (tabletes) digitális kitöltéssel.
+    </p>
+
+    <div class="home-cards">
+        <div class="home-card">
+            <h2>Pulti / tabletes kiszolgálás</h2>
+            <p>Régi ügyfél diszkrét előhívása születési dátum alapján, majd adatlap-kitöltés.</p>
+            <a class="ds-submit" href="/pult">Megnyitás</a>
+        </div>
+
+        <div class="home-card">
+            <h2>Távoli páciens-portál (demó)</h2>
+            <p>Hozzon létre egy online kitöltési linket egy demo régi ügyfélnek.</p>
+            <button class="ds-submit" @onclick="CreateDemoLink" disabled="@_working">
+                @(_working ? "Létrehozás…" : "Demo link generálása")
+            </button>
+            @if (_link is not null)
+            {
+                <div class="home-link">
+                    <p>A kiküldendő link (SMS/e-mail helyett most itt):</p>
+                    <a href="@_link">@_link</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _working;
+    private string? _link;
+
+    private async Task CreateDemoLink()
+    {
+        _working = true;
+        try
+        {
+            // Demo: az 1956-03-22-i Kovács Lajosné előhívása (KVL mock seed), majd link generálás.
+            var result = await Lookup.FindByDateOfBirthAsync(new DateOnly(1956, 3, 22));
+            var patient = result.Matches.First();
+            var linkInfo = await DataSheets.CreateRemoteLinkAsync(patient.PatientId);
+            _link = Nav.BaseUri.TrimEnd('/') + "/adatlap/" + linkInfo.AccessToken;
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+}

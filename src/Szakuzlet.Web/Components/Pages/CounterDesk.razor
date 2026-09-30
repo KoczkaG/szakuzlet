@@ -1,0 +1,157 @@
+@page "/pult"
+@using Szakuzlet.Web.Models
+@using Szakuzlet.Web.Components.Shared
+@inject PatientLookupService Lookup
+@inject DataSheetService DataSheets
+@rendermode InteractiveServer
+
+<PageTitle>Pulti / tabletes kiszolgálás</PageTitle>
+
+<div class="desk">
+    <header class="desk-head">
+        <h1>Pulti kiszolgálás – ügyfél előhívása</h1>
+        <p>Adja meg a születési dátumot a diszkrét profil-előhíváshoz.</p>
+    </header>
+
+    @if (_step == Step.Search)
+    {
+        <div class="desk-search">
+            <label>Születési dátum</label>
+            <input type="date" @bind="_dob" class="ds-input" />
+            <button class="ds-submit" @onclick="Search" disabled="@_searching">
+                @(_searching ? "Keresés…" : "Profil előhívása")
+            </button>
+
+            @if (_searched && _result is not null)
+            {
+                @if (_result.IsEmpty)
+                {
+                    <div class="desk-branch">
+                        <p>Nincs találat erre a dátumra.</p>
+                        <p><strong>Kérjük, írja be a nevét, vagy kérje munkatársunk segítségét.</strong></p>
+                    </div>
+                }
+                else
+                {
+                    @if (_result.IsAmbiguous)
+                    {
+                        <p class="desk-note">Több egyező találat – kérjük, válassza ki a megfelelőt:</p>
+                    }
+                    <ul class="desk-matches">
+                        @foreach (var m in _result.Matches)
+                        {
+                            <li>
+                                <button class="desk-match" @onclick="() => Select(m)">
+                                    <span class="desk-match-name">@m.FullName</span>
+                                    @if (m.MaskedCity is not null)
+                                    {
+                                        <span class="desk-match-city">(@m.MaskedCity)</span>
+                                    }
+                                    @if (m.HasMissingContact)
+                                    {
+                                        <span class="desk-badge">Hiányos adatlap</span>
+                                    }
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                }
+            }
+        </div>
+    }
+    else if (_step == Step.Fill)
+    {
+        <div class="desk-fill">
+            <button class="desk-back" @onclick="BackToSearch">&larr; Vissza a kereséshez</button>
+            @if (_missingBanner)
+            {
+                <div class="desk-alert">
+                    Az ügyfél adatlapja hiányos – kérjük, pótolja a hiányzó kontaktadatokat.
+                </div>
+            }
+            <DataSheetEditor Form="_form" SubmitLabel="Mentés és véglegesítés"
+                             Submitting="_submitting" OnSubmit="Submit" />
+        </div>
+    }
+    else if (_step == Step.Done)
+    {
+        <div class="portal-done">
+            <h2>Kész</h2>
+            <p>Az adatlap véglegesítve, a profil frissítve a KVL-ben.</p>
+            <button class="ds-submit" @onclick="Reset">Új ügyfél</button>
+        </div>
+    }
+</div>
+
+@code {
+    private enum Step { Search, Fill, Done }
+    private Step _step = Step.Search;
+
+    private DateTime? _dob;
+    private bool _searching;
+    private bool _searched;
+    private LookupResult? _result;
+
+    private bool _submitting;
+    private bool _missingBanner;
+    private Guid _sheetId;
+    private DataSheetForm _form = new();
+
+    private async Task Search()
+    {
+        if (_dob is null) return;
+        _searching = true;
+        _result = await Lookup.FindByDateOfBirthAsync(DateOnly.FromDateTime(_dob.Value));
+        _searched = true;
+        _searching = false;
+    }
+
+    private async Task Select(PatientMatch match)
+    {
+        _missingBanner = match.HasMissingContact;
+        _sheetId = await DataSheets.CreateWalkInSheetAsync(match.PatientId);
+
+        // A helyi profil betöltése az űrlapba a "Gyors adatfrissítési panel"-hez.
+        var sheet = await DataSheets.GetByIdWithPatientAsync(_sheetId);
+        var p = sheet!.Patient;
+        _form = new DataSheetForm
+        {
+            FullName = p.FullName,
+            DateOfBirth = p.DateOfBirth?.ToDateTime(TimeOnly.MinValue),
+            TajNumber = p.TajNumber,
+            MobilePhone = p.MobilePhone,
+            Email = p.Email,
+            PostalCode = p.PostalCode,
+            City = p.City,
+            AddressLine = p.AddressLine
+        };
+        _step = Step.Fill;
+    }
+
+    private async Task Submit()
+    {
+        _submitting = true;
+        try
+        {
+            var ctx = new SubmissionContext("pult-tablet", "CounterDesk");
+            await DataSheets.SubmitAsync(_sheetId, _form.ToInput(), ctx);
+            _step = Step.Done;
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    private void BackToSearch() => _step = Step.Search;
+
+    private void Reset()
+    {
+        _dob = null;
+        _searched = false;
+        _result = null;
+        _form = new DataSheetForm();
+        _missingBanner = false;
+        _step = Step.Search;
+    }
+}

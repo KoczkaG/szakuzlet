@@ -1,0 +1,93 @@
+@page "/adatlap/{Token}"
+@using Szakuzlet.Web.Models
+@using Szakuzlet.Web.Components.Shared
+@inject DataSheetService DataSheets
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Adatlap kitöltése</PageTitle>
+
+<div class="portal">
+    <header class="portal-head">
+        <h1>SOMNO SHOP – Online adatlap</h1>
+        <p>Kérjük, töltse ki az alábbi adatokat. Ez kiváltja a papíralapú ügyintézést.</p>
+    </header>
+
+    @if (_loading)
+    {
+        <p>Betöltés…</p>
+    }
+    else if (_invalid)
+    {
+        <div class="portal-error">
+            <h2>A link érvénytelen vagy lejárt</h2>
+            <p>Kérjük, vegye fel a kapcsolatot munkatársunkkal egy új link igényléséhez.</p>
+        </div>
+    }
+    else if (_done)
+    {
+        <div class="portal-done">
+            <h2>Köszönjük!</h2>
+            <p>Adatlapját sikeresen rögzítettük. A jóváhagyás időpontját biztonságosan tároltuk.</p>
+        </div>
+    }
+    else
+    {
+        <DataSheetEditor Form="_form" SubmitLabel="Adatlap beküldése"
+                         Submitting="_submitting" OnSubmit="Submit" />
+    }
+</div>
+
+@code {
+    [Parameter] public string Token { get; set; } = string.Empty;
+
+    private bool _loading = true;
+    private bool _invalid;
+    private bool _done;
+    private bool _submitting;
+    private Guid _sheetId;
+    private DataSheetForm _form = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var sheet = await DataSheets.GetByTokenAsync(Token);
+        if (sheet is null)
+        {
+            _invalid = true;
+        }
+        else
+        {
+            _sheetId = sheet.Id;
+            var p = sheet.Patient;
+            _form = new DataSheetForm
+            {
+                FullName = p.FullName,
+                DateOfBirth = p.DateOfBirth?.ToDateTime(TimeOnly.MinValue),
+                TajNumber = p.TajNumber,
+                MobilePhone = p.MobilePhone,
+                Email = p.Email,
+                PostalCode = p.PostalCode,
+                City = p.City,
+                AddressLine = p.AddressLine
+            };
+        }
+        _loading = false;
+    }
+
+    private async Task Submit()
+    {
+        _submitting = true;
+        try
+        {
+            // Éles környezetben a valós kliens IP-t egy HttpContext-accessor adja;
+            // itt a portál-kontextust jelöljük meg.
+            var ctx = new SubmissionContext("portal", "PatientPortal");
+            await DataSheets.SubmitAsync(_sheetId, _form.ToInput(), ctx);
+            _done = true;
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+}
