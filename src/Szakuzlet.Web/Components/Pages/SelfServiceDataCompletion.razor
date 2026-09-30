@@ -1,0 +1,76 @@
+@page "/adatpotlas/{Token}"
+@using Szakuzlet.Application.DataQuality
+@inject DataQualityService Quality
+@rendermode InteractiveServer
+
+<PageTitle>Adatpótlás</PageTitle>
+
+<div class="portal">
+    <header class="portal-head">
+        <h1>Hiányzó adatok pótlása</h1>
+        <p>Kérjük, adja meg a hiányzó elérhetőségeit.</p>
+    </header>
+
+    @if (_loading)
+    {
+        <p>Betöltés…</p>
+    }
+    else if (_invalid)
+    {
+        <div class="portal-error"><h2>A link érvénytelen, lejárt vagy már felhasználták</h2></div>
+    }
+    else if (_done)
+    {
+        <div class="portal-done">
+            <h2>Köszönjük!</h2>
+            <p>Adatait rögzítettük.</p>
+            <p class="ds-hint">@DataQualityMessages.MarketingClosing</p>
+        </div>
+    }
+    else
+    {
+        <div class="ds-section">
+            <p class="ds-hint">Hiányzó adatok: @_missing</p>
+            <div class="ds-field"><label>E-mail cím</label><input class="ds-input" @bind="_email" /></div>
+            <div class="ds-field"><label>Mobiltelefonszám</label><input class="ds-input" @bind="_mobile" /></div>
+            <div class="ds-field"><label>TAJ szám</label><input class="ds-input" @bind="_taj" /></div>
+            @if (_error is not null) { <div class="desk-alert">@_error</div> }
+            <button class="ds-submit" @onclick="Submit" disabled="@_busy">
+                @(_busy ? "Mentés…" : "Adatok beküldése")
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Token { get; set; } = string.Empty;
+
+    private bool _loading = true;
+    private bool _invalid;
+    private bool _done;
+    private bool _busy;
+    private string? _missing;
+    private string? _email, _mobile, _taj;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var req = await Quality.GetByTokenAsync(Token);
+        if (req is null) { _invalid = true; }
+        else { _missing = req.MissingFields; }
+        _loading = false;
+    }
+
+    private async Task Submit()
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            await Quality.CompleteSelfServiceAsync(Token, new ContactUpdate(_email, _mobile, _taj));
+            _done = true;
+        }
+        catch (InvalidOperationException ex) { _error = ex.Message; }
+        finally { _busy = false; }
+    }
+}

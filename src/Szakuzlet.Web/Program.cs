@@ -51,4 +51,7 @@ app.MapCallCenterApi();
 // Logisztika, Timeline és Philips-import végpontok.
 app.MapLogisticsApi();
 
+// „ADATLAP HIÁNYOS” protokoll végpontjai.
+app.MapDataQualityApi();
+
 app.Run();

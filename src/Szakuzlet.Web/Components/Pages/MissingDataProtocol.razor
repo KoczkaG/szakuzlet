@@ -1,0 +1,176 @@
+@page "/adatlap-hianyos"
+@using Szakuzlet.Application.DataQuality
+@using Szakuzlet.Application.Patients
+@inject PatientLookupService Lookup
+@inject DataQualityService Quality
+@rendermode InteractiveServer
+
+<PageTitle>ADATLAP HIÁNYOS – riasztási protokoll</PageTitle>
+
+<div class="desk">
+    <header class="desk-head">
+        <h1>Adatlap-hiányos protokoll</h1>
+        <p>Ügyfél előhívása, majd a kötelező kontaktadatok ellenőrzése és pótlása.</p>
+    </header>
+
+    <div class="desk-search">
+        <label>Születési dátum</label>
+        <input type="date" @bind="_dob" class="ds-input" />
+        <button class="ds-submit" @onclick="Search" disabled="@_searching">
+            @(_searching ? "Keresés…" : "Ügyfél előhívása")
+        </button>
+
+        @if (_matches is not null && _alert is null)
+        {
+            @if (_matches.Count == 0)
+            {
+                <p class="desk-note">Nincs találat.</p>
+            }
+            else
+            {
+                <ul class="desk-matches">
+                    @foreach (var m in _matches)
+                    {
+                        <li>
+                            <button class="desk-match" @onclick="() => Open(m)">
+                                <span class="desk-match-name">@m.FullName</span>
+                                @if (m.HasMissingContact) { <span class="desk-badge">Hiányos</span> }
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+        }
+    </div>
+
+    @if (_alert is not null)
+    {
+        <button class="desk-back" @onclick="Reset">← Új keresés</button>
+
+        @if (!_alert.HasMissing)
+        {
+            <div class="portal-done">
+                <h2>@_selectedName – adatlap rendben</h2>
+                <p>Minden kötelező kontaktadat (e-mail, mobil, TAJ) rendelkezésre áll.</p>
+            </div>
+        }
+        else if (_done)
+        {
+            <div class="portal-done">
+                <h2>Kész</h2>
+                <p>@_doneMessage</p>
+                <p class="ds-hint">@DataQualityMessages.MarketingClosing</p>
+            </div>
+        }
+        else
+        {
+            <div class="mdp-alert">
+                ⚠ FIGYELEM: Az ügyfél adatlapja HIÁNYOS! (Hiányzik: @_alert.MissingFieldsText)
+            </div>
+
+            <div class="mdp-options">
+                <div class="ds-section">
+                    <h3>„A” opció – helyszíni / telefonos frissítés</h3>
+                    <p class="ds-hint">A hiányzó adat rögzítése az ügyfél szóbeli jóváhagyásával.</p>
+                    @if (Show("E-mail cím"))
+                    {
+                        <div class="ds-field"><label>E-mail cím</label>
+                            <input class="ds-input" @bind="_email" /></div>
+                    }
+                    @if (Show("Mobiltelefonszám"))
+                    {
+                        <div class="ds-field"><label>Mobiltelefonszám</label>
+                            <input class="ds-input" @bind="_mobile" /></div>
+                    }
+                    @if (Show("TAJ szám"))
+                    {
+                        <div class="ds-field"><label>TAJ szám</label>
+                            <input class="ds-input" @bind="_taj" /></div>
+                    }
+                    <button class="ds-submit" @onclick="UpdateInPerson" disabled="@_busy">
+                        Mentés (helyszíni)
+                    </button>
+                </div>
+
+                <div class="ds-section">
+                    <h3>„B” opció – önkiszolgáló link</h3>
+                    <p class="ds-hint">
+                        Pörgős pultnál: a rendszer egyedi linket küld a betegnek SMS-ben / e-mailben,
+                        amit ő maga tölt ki.
+                    </p>
+                    <button class="ds-submit" @onclick="SendLink" disabled="@_busy">
+                        Önkiszolgáló link kiküldése
+                    </button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private DateTime? _dob;
+    private bool _searching;
+    private IReadOnlyList<PatientMatch>? _matches;
+
+    private Guid _selectedId;
+    private string _selectedName = string.Empty;
+    private MissingContactAlert? _alert;
+
+    private string? _email, _mobile, _taj;
+    private bool _busy;
+    private bool _done;
+    private string _doneMessage = string.Empty;
+
+    private async Task Search()
+    {
+        if (_dob is null) return;
+        _searching = true;
+        var result = await Lookup.FindByDateOfBirthAsync(DateOnly.FromDateTime(_dob.Value));
+        _matches = result.Matches;
+        _alert = null;
+        _searching = false;
+    }
+
+    private async Task Open(PatientMatch m)
+    {
+        _selectedId = m.PatientId;
+        _selectedName = m.FullName;
+        _done = false;
+        _email = _mobile = _taj = null;
+        _alert = await Quality.CheckAsync(m.PatientId);
+    }
+
+    private bool Show(string field) => _alert?.MissingFields.Contains(field) ?? false;
+
+    private async Task UpdateInPerson()
+    {
+        _busy = true;
+        try
+        {
+            await Quality.UpdateInPersonAsync(_selectedId, new ContactUpdate(_email, _mobile, _taj));
+            _doneMessage = "Az adatokat rögzítettük, a GDPR igazolást kiküldtük.";
+            _done = true;
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task SendLink()
+    {
+        _busy = true;
+        try
+        {
+            await Quality.SendSelfServiceLinkAsync(_selectedId);
+            _doneMessage = "Az önkiszolgáló adatpótló linket kiküldtük a betegnek.";
+            _done = true;
+        }
+        finally { _busy = false; }
+    }
+
+    private void Reset()
+    {
+        _alert = null;
+        _matches = null;
+        _dob = null;
+        _done = false;
+    }
+}

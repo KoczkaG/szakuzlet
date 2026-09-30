@@ -26,6 +26,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<PhilipsReplacement> PhilipsReplacements => Set<PhilipsReplacement>();
     public DbSet<CallNote> CallNotes => Set<CallNote>();
     public DbSet<ReferralSource> ReferralSources => Set<ReferralSource>();
+    public DbSet<DataCompletionRequest> DataCompletionRequests => Set<DataCompletionRequest>();
 
     Task<int> IAppDbContext.SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
 
@@ -226,6 +227,16 @@ public class AppDbContext : DbContext, IAppDbContext
             e.HasOne(x => x.ReferralSource).WithMany()
                 .HasForeignKey(x => x.ReferralSourceId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => x.CallId).IsUnique();
+        });
+
+        b.Entity<DataCompletionRequest>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Token).IsRequired().HasMaxLength(128);
+            e.Property(x => x.MissingFields).HasMaxLength(200);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.Token).IsUnique();
         });
     }
 }

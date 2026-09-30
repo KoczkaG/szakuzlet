@@ -27,6 +27,7 @@ public interface IAppDbContext
     DbSet<PhilipsReplacement> PhilipsReplacements { get; }
     DbSet<CallNote> CallNotes { get; }
     DbSet<ReferralSource> ReferralSources { get; }
+    DbSet<DataCompletionRequest> DataCompletionRequests { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

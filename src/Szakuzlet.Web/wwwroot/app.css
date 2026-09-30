@@ -150,3 +150,8 @@ h1:focus {
 .stat-ranking li { margin:.3rem 0; }
 .stat-count { color:#1b6ec2; font-weight:600; margin-left:.5rem; }
 .stat-complaints { font-size:1.1rem; font-weight:600; color:#b02a2a; }
+
+.mdp-alert { background:#b02a2a; color:#fff; padding:1rem 1.25rem; border-radius:8px;
+    font-weight:600; margin:1rem 0; }
+.mdp-options { display:flex; gap:1rem; flex-wrap:wrap; }
+.mdp-options .ds-section { flex:1 1 300px; }

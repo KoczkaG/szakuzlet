@@ -78,6 +78,21 @@ alapján épül fel, moduláris megközelítéssel.
   küldő alváslaborok/orvosok rangsora, panaszok száma – időszakra szűrve.
 - **UI**: hívásvégi jegyzet a `/hivasok` oldalon, statisztika a `/statisztika` oldalon.
 
+**I. Modul / F) – Automata „ADATLAP HIÁNYOS” Riasztási Protokoll**
+
+- **Feltételes riasztás** (`DataQualityService`): adatlap-megnyitáskor ellenőrzi a kötelező
+  kontaktmezőket (e-mail, mobil, TAJ), és jelzi, pontosan mely mező hiányzik.
+- **„A” opció** – helyszíni/telefonos frissítés: a pultos rögzíti a hiányzó adatot, mentés után
+  automata GDPR adatfrissítési igazolás megy ki.
+- **„B” opció** – önkiszolgáló adatpótló link (`DataCompletionRequest`): egyedi tokenes link
+  SMS-ben/e-mailben, a beteg maga tölti ki; lejárat- és egyszer-használat-kezeléssel.
+- **Beépített webshopos marketing-terelés** mindkét opció záróüzenetében.
+- **UI**: pulti protokoll (`/adatlap-hianyos`), beteg oldali adatpótlás (`/adatpotlas/{token}`).
+
+---
+
+**Az I. Modul (Intelligens betegadatbázis és kapcsolattartás) mind a hat alrésze (A–F) elkészült.**
+
 ## Architektúra
 
 Réteges felépítés, hogy a KVL vállalatirányítási rendszer API-jaira később
@@ -126,8 +141,13 @@ ASPNETCORE_ENVIRONMENT=Development dotnet run --project src/Szakuzlet.Web
 - Pulti kiszolgálás: `/pult`
 - Pulti áttekintő (Dashboard): `/dashboard`
 - Nyitvatartás admin: `/nyitvatartas`
+- Kimenő hívás (Click-to-Call): `/hivasok`
+- Ügyfél idővonal: `/idovonal`
+- Hívásstatisztika: `/statisztika`
+- Adatlap-hiányos protokoll: `/adatlap-hianyos`
 - Páciens-portál: `/adatlap/{token}` (a linket a kezdőlap „Demo link” gombja generálja)
 - Rendelés-adatpótlás: `/rendeles-adatpotlas/{token}`
+- Önkiszolgáló adatpótlás: `/adatpotlas/{token}`
 
 ### Telefonközpont REST API (a külső VoIP hívja)
 
@@ -158,6 +178,13 @@ ASPNETCORE_ENVIRONMENT=Development dotnet run --project src/Szakuzlet.Web
 - `GET  /api/callnotes/referral-sources` – küldő intézmények / alváslaborok (legördülő)
 - `POST /api/callnotes/{callId}` – hívásvégi jegyzet mentése
 - `GET  /api/callstats?from=&to=` – vezetői hívásstatisztika időszakra
+
+### „ADATLAP HIÁNYOS” protokoll REST API
+
+- `GET  /api/dataquality/patients/{patientId}/check` – kötelező mezők ellenőrzése
+- `POST /api/dataquality/patients/{patientId}/update` – „A” opció: helyszíni frissítés
+- `POST /api/dataquality/patients/{patientId}/send-link` – „B” opció: önkiszolgáló link
+- `POST /api/dataquality/complete/{token}` – a beteg beküldi az adatokat a linken
 
 ## Tesztek
 
