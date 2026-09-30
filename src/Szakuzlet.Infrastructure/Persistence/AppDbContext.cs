@@ -27,6 +27,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<CallNote> CallNotes => Set<CallNote>();
     public DbSet<ReferralSource> ReferralSources => Set<ReferralSource>();
     public DbSet<DataCompletionRequest> DataCompletionRequests => Set<DataCompletionRequest>();
+    public DbSet<HealthFund> HealthFunds => Set<HealthFund>();
+    public DbSet<EanCode> EanCodes => Set<EanCode>();
 
     Task<int> IAppDbContext.SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
 
@@ -120,9 +122,23 @@ public class AppDbContext : DbContext, IAppDbContext
         {
             e.HasKey(x => x.Id);
             e.Property(x => x.Number).IsRequired().HasMaxLength(50);
+            e.Property(x => x.EpName).HasMaxLength(200);
+            e.Property(x => x.EpMemberId).HasMaxLength(60);
+            e.Property(x => x.EpBeneficiaryName).HasMaxLength(200);
+            e.Property(x => x.AssignedEanCode).HasMaxLength(60);
+            e.Property(x => x.EInvoiceReference).HasMaxLength(100);
             e.HasOne(x => x.Patient).WithMany(p => p.Invoices)
                 .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => x.Status);
+            // Duplikáció-védelem: a számla sorszáma egyedi (II. Modul A – fantomszámlák ellen).
+            e.HasIndex(x => x.Number).IsUnique();
+            // Céges/EP vevő-adatok elkülönített (owned) blokkban.
+            e.OwnsOne(x => x.BillingParty, bp =>
+            {
+                bp.Property(p => p.Name).HasMaxLength(300);
+                bp.Property(p => p.TaxNumber).HasMaxLength(30);
+                bp.Property(p => p.Address).HasMaxLength(300);
+            });
         });
 
         b.Entity<Order>(e =>
@@ -237,6 +253,22 @@ public class AppDbContext : DbContext, IAppDbContext
             e.HasOne(x => x.Patient).WithMany()
                 .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => x.Token).IsUnique();
+        });
+
+        b.Entity<HealthFund>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            e.Property(x => x.OfficialAddress).HasMaxLength(300);
+            e.Property(x => x.TaxNumber).HasMaxLength(30);
+        });
+
+        b.Entity<EanCode>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Code).IsRequired().HasMaxLength(60);
+            e.HasIndex(x => x.Code).IsUnique();
+            e.HasIndex(x => x.Used);
         });
     }
 }

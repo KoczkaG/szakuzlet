@@ -54,4 +54,7 @@ app.MapLogisticsApi();
 // „ADATLAP HIÁNYOS” protokoll végpontjai.
 app.MapDataQualityApi();
 
+// Számlázás, EAN-pool, OEP-egyeztető végpontok (II. Modul).
+app.MapBillingApi();
+
 app.Run();

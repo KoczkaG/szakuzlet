@@ -43,6 +43,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<ITokenGenerator, TokenGenerator>();
+        services.AddScoped<IInvoiceNumberGenerator, InvoiceNumberGenerator>();
         services.AddSingleton<IPostalCodeLookup, StaticPostalCodeLookup>();
 
         // A valós KVL API elkészültéig mock. Cseréje: egyetlen sor módosítása.
@@ -72,6 +73,17 @@ public static class DependencyInjection
         services.AddScoped<Szakuzlet.Application.CallCenter.CallNoteService>();
         services.AddScoped<Szakuzlet.Application.CallCenter.CallStatisticsService>();
         services.AddScoped<Szakuzlet.Application.DataQuality.DataQualityService>();
+        services.AddScoped<Szakuzlet.Application.Billing.BillingService>();
+        services.AddScoped<Szakuzlet.Application.Billing.EanPoolService>();
+        services.AddScoped<Szakuzlet.Application.Billing.SettlementService>();
+
+        // Hiteles e-számlázás (Számlázz.hu) mock a valós API-ig.
+        services.AddSingleton<Szakuzlet.Application.Billing.IEInvoiceClient,
+            Szakuzlet.Infrastructure.Billing.MockEInvoiceClient>();
+
+        // Kártyás terminál (POS) mock a valós integrációig.
+        services.AddSingleton<Szakuzlet.Application.Billing.ICardTerminal,
+            Szakuzlet.Infrastructure.Billing.MockCardTerminal>();
 
         // Futár-szinkron (GLS/MPL) mock a valós API-kig.
         services.AddSingleton<Szakuzlet.Infrastructure.Logistics.MockCourierClient>();

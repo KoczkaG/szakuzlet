@@ -93,6 +93,25 @@ alapján épül fel, moduláris megközelítéssel.
 
 **Az I. Modul (Intelligens betegadatbázis és kapcsolattartás) mind a hat alrésze (A–F) elkészült.**
 
+## II. Modul – Pulti értékesítés, számlázás és pénzügyi automatizmusok
+
+- **A) Számlázási stabilitás és adónem-váltási adatvédelem** – egyedi számlasorszám
+  (duplikáció-mentes), és a magánszemély → céges/EP váltás elkülönített `BillingParty` blokkban,
+  a beteg törzsadatainak megőrzésével.
+- **B) Integrált EP-adatkapu és automata számlakép** – `HealthFund` törzsadat, automata
+  hierarchikus névösszefűzés a számlán, szigorú EP „Riasztó/Zászló” (székhely+adószám beemelés).
+- **C) Virtuális EAN-kód Pool és hibrid e-számlázás** – digitális matrica-tömb (`EanCode`),
+  automata kód-kiosztás és ráégetés, készlet-riasztás a beszerzésnek, hiteles e-számla
+  (`IEInvoiceClient`, Számlázz.hu mock, NAV-jelentés), hibrid kiadás (digitális / papír).
+- **D) Pulti védőháló és integrált terminál-kassza** – kód-szintű elírás-gátló (`BillingValidator`:
+  vény 27, matrica 21, orvos 99, duplikáció-szűrő), kétirányú logikai zárási szűrő
+  (postaköltség ↔ fizetési mód), terminál limit-védőháló (`ICardTerminal`): sikertelen kártyás
+  fizetésnél nem keletkezik NAV-számla.
+- **E) Automata háttér-statisztika és OEP napi egyeztető** – `SettlementService`: átlátható
+  kaució-elszámoló, terméktípusonkénti napi OEP egyeztetés (KVL ↔ Mankó eltérés-jelzés),
+  és a kihordási idő CRM követés a tényleges eladási dátumból.
+- **UI**: pulti számlázás (`/szamlazas`). **REST API**: `/api/billing/...`.
+
 ## Architektúra
 
 Réteges felépítés, hogy a KVL vállalatirányítási rendszer API-jaira később
