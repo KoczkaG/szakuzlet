@@ -1,0 +1,89 @@
+@page "/rendeles-adatpotlas/{Token}"
+@using Szakuzlet.Application.Orders
+@inject OrderCompletionService Orders
+@rendermode InteractiveServer
+
+<PageTitle>Hiányzó adatok pótlása</PageTitle>
+
+<div class="portal">
+    <header class="portal-head">
+        <h1>Hiányzó adatok pótlása</h1>
+        <p>A csomag feladásához kérjük, adja meg az alábbi elérhetőséget.</p>
+    </header>
+
+    @if (_loading)
+    {
+        <p>Betöltés…</p>
+    }
+    else if (_invalid)
+    {
+        <div class="portal-error">
+            <h2>A link érvénytelen vagy már felhasználták</h2>
+        </div>
+    }
+    else if (_done)
+    {
+        <div class="portal-done">
+            <h2>Köszönjük!</h2>
+            <p>Adatait rögzítettük, megrendelése feldolgozás alatt.</p>
+        </div>
+    }
+    else
+    {
+        <div class="ds-section">
+            <div class="ds-field">
+                <label>Mobiltelefonszám</label>
+                <input class="ds-input" @bind="_mobile" placeholder="+36 30 123 4567" />
+            </div>
+            <div class="ds-field">
+                <label>E-mail cím</label>
+                <input class="ds-input" @bind="_email" />
+            </div>
+            @if (_error is not null)
+            {
+                <div class="desk-alert">@_error</div>
+            }
+            <button class="ds-submit" @onclick="Submit" disabled="@_submitting">
+                @(_submitting ? "Mentés…" : "Adatok beküldése")
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Token { get; set; } = string.Empty;
+
+    private bool _loading = true;
+    private bool _invalid;
+    private bool _done;
+    private bool _submitting;
+    private string? _mobile;
+    private string? _email;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var order = await Orders.GetByTokenAsync(Token);
+        _invalid = order is null;
+        _loading = false;
+    }
+
+    private async Task Submit()
+    {
+        _submitting = true;
+        _error = null;
+        try
+        {
+            await Orders.CompleteDataAsync(Token, _mobile, _email);
+            _done = true;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+}

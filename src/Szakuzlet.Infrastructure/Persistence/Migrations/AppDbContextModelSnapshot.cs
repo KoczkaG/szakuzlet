@@ -65,6 +65,201 @@ namespace Szakuzlet.Infrastructure.Persistence.Migrations
                     b.ToTable("AuditLog");
                 });
 
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.BusinessHour", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<TimeOnly?>("ClosesAt")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<int>("Day")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("boolean");
+
+                    b.Property<TimeOnly?>("OpensAt")
+                        .HasColumnType("time without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Day")
+                        .IsUnique();
+
+                    b.ToTable("BusinessHours");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.CalendarOverride", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<TimeOnly?>("ClosesAt")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<TimeOnly?>("OpensAt")
+                        .HasColumnType("time without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date")
+                        .IsUnique();
+
+                    b.ToTable("CalendarOverrides");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.CallNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CallId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("FollowUpRequired")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ReferralSourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("Topics")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CallId")
+                        .IsUnique();
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("ReferralSourceId");
+
+                    b.ToTable("CallNotes");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.CallRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Answered")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("DialedPhoneKind")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Direction")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("EndedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IvrMenu")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int>("Recording")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RecordingReference")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<Guid?>("ServiceWorksheetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("PhoneNumber");
+
+                    b.ToTable("Calls");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.CallbackRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("DueAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Resolution")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTimeOffset?>("ResolvedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("PhoneNumber", "Status");
+
+                    b.ToTable("Callbacks");
+                });
+
             modelBuilder.Entity("Szakuzlet.Domain.Entities.ConsentRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -93,6 +288,47 @@ namespace Szakuzlet.Infrastructure.Persistence.Migrations
                     b.HasIndex("PatientId");
 
                     b.ToTable("Consents");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.DataCompletionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Completed")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("MissingFields")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.ToTable("DataCompletionRequests");
                 });
 
             modelBuilder.Entity("Szakuzlet.Domain.Entities.DataSheet", b =>
@@ -141,6 +377,107 @@ namespace Szakuzlet.Infrastructure.Persistence.Migrations
                     b.ToTable("DataSheets");
                 });
 
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.Invoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset?>("ParkingExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("SentAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Invoices");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.InvoiceLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ItemCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.ToTable("InvoiceLines");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.Order", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ClosedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DataCompletionToken")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DataCompletionToken");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Orders");
+                });
+
             modelBuilder.Entity("Szakuzlet.Domain.Entities.Patient", b =>
                 {
                     b.Property<Guid>("Id")
@@ -177,6 +514,9 @@ namespace Szakuzlet.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateOnly?>("LastPurchaseDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("MobilePhone")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
@@ -185,12 +525,18 @@ namespace Szakuzlet.Infrastructure.Persistence.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
 
+                    b.Property<int?>("ProductWearMonths")
+                        .HasColumnType("integer");
+
                     b.Property<string>("TajNumber")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("WearExpiryNotified")
+                        .HasColumnType("boolean");
 
                     b.HasKey("Id");
 
@@ -199,6 +545,250 @@ namespace Szakuzlet.Infrastructure.Persistence.Migrations
                     b.HasIndex("KvlPartnerCode");
 
                     b.ToTable("Patients");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.PatientPhone", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContactName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("LegallyApproved")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("Phones");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.PatientTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ClosedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Tasks");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.PhilipsReplacement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ImportedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly?>("ReplacedOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ReplacementModel")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("SerialNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId")
+                        .IsUnique();
+
+                    b.HasIndex("SerialNumber");
+
+                    b.ToTable("PhilipsReplacements");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.ReferralSource", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DoctorName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ReferralSources");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.Shipment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Courier")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReceivedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("StatusUpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TrackingNumber")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("TrackingNumber");
+
+                    b.ToTable("Shipments");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.TimelineEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId", "OccurredAtUtc");
+
+                    b.ToTable("TimelineEvents");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.CallNote", b =>
+                {
+                    b.HasOne("Szakuzlet.Domain.Entities.CallRecord", "Call")
+                        .WithMany()
+                        .HasForeignKey("CallId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Szakuzlet.Domain.Entities.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Szakuzlet.Domain.Entities.ReferralSource", "ReferralSource")
+                        .WithMany()
+                        .HasForeignKey("ReferralSourceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Call");
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("ReferralSource");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.CallRecord", b =>
+                {
+                    b.HasOne("Szakuzlet.Domain.Entities.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.CallbackRequest", b =>
+                {
+                    b.HasOne("Szakuzlet.Domain.Entities.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("Szakuzlet.Domain.Entities.ConsentRecord", b =>
@@ -220,10 +810,109 @@ namespace Szakuzlet.Infrastructure.Persistence.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.DataCompletionRequest", b =>
+                {
+                    b.HasOne("Szakuzlet.Domain.Entities.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("Szakuzlet.Domain.Entities.DataSheet", b =>
                 {
                     b.HasOne("Szakuzlet.Domain.Entities.Patient", "Patient")
                         .WithMany("DataSheets")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.Invoice", b =>
+                {
+                    b.HasOne("Szakuzlet.Domain.Entities.Patient", "Patient")
+                        .WithMany("Invoices")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.InvoiceLine", b =>
+                {
+                    b.HasOne("Szakuzlet.Domain.Entities.Invoice", "Invoice")
+                        .WithMany("Lines")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.Order", b =>
+                {
+                    b.HasOne("Szakuzlet.Domain.Entities.Patient", "Patient")
+                        .WithMany("Orders")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.PatientPhone", b =>
+                {
+                    b.HasOne("Szakuzlet.Domain.Entities.Patient", "Patient")
+                        .WithMany("Phones")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.PatientTask", b =>
+                {
+                    b.HasOne("Szakuzlet.Domain.Entities.Patient", "Patient")
+                        .WithMany("Tasks")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.PhilipsReplacement", b =>
+                {
+                    b.HasOne("Szakuzlet.Domain.Entities.Patient", "Patient")
+                        .WithOne("PhilipsReplacement")
+                        .HasForeignKey("Szakuzlet.Domain.Entities.PhilipsReplacement", "PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.Shipment", b =>
+                {
+                    b.HasOne("Szakuzlet.Domain.Entities.Patient", "Patient")
+                        .WithMany("Shipments")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.TimelineEvent", b =>
+                {
+                    b.HasOne("Szakuzlet.Domain.Entities.Patient", "Patient")
+                        .WithMany("TimelineEvents")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -236,11 +925,30 @@ namespace Szakuzlet.Infrastructure.Persistence.Migrations
                     b.Navigation("Consents");
                 });
 
+            modelBuilder.Entity("Szakuzlet.Domain.Entities.Invoice", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
             modelBuilder.Entity("Szakuzlet.Domain.Entities.Patient", b =>
                 {
                     b.Navigation("Consents");
 
                     b.Navigation("DataSheets");
+
+                    b.Navigation("Invoices");
+
+                    b.Navigation("Orders");
+
+                    b.Navigation("PhilipsReplacement");
+
+                    b.Navigation("Phones");
+
+                    b.Navigation("Shipments");
+
+                    b.Navigation("Tasks");
+
+                    b.Navigation("TimelineEvents");
                 });
 #pragma warning restore 612, 618
         }

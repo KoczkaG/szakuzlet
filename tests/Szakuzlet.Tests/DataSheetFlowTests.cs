@@ -15,7 +15,8 @@ public class DataSheetFlowTests
         var clock = new FakeClock();
         var kvl = new MockKvlClient();
         var tokens = new FakeTokenGenerator();
-        var sheets = new DataSheetService(db.Context, clock, tokens, kvl);
+        var events = new Szakuzlet.Application.Common.EventRecorder(db.Context, clock);
+        var sheets = new DataSheetService(db.Context, clock, tokens, kvl, events);
         var lookup = new PatientLookupService(db.Context, kvl, clock);
         return (sheets, lookup, clock, kvl, db);
     }

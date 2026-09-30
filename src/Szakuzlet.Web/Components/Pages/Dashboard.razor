@@ -1,0 +1,82 @@
+@page "/dashboard"
+@using Szakuzlet.Application.Dashboard
+@inject DashboardService DashboardSvc
+@rendermode InteractiveServer
+
+<PageTitle>Pulti áttekintő</PageTitle>
+
+<div class="home">
+    <h1>Pulti áttekintő</h1>
+    <p class="home-lead">Nyitott feladatok, parkoltatott számlák és adatpótlásra váró rendelések.</p>
+
+    @if (_data is null)
+    {
+        <p>Betöltés…</p>
+    }
+    else
+    {
+        <div class="ds-section">
+            <h3>Nyitott feladatok (@_data.OpenTasks.Count)</h3>
+            @if (_data.OpenTasks.Count == 0)
+            {
+                <p>Nincs nyitott feladat.</p>
+            }
+            else
+            {
+                <ul class="desk-matches">
+                    @foreach (var t in _data.OpenTasks)
+                    {
+                        <li>
+                            <strong>@t.PatientName</strong> – @t.Title
+                            @if (t.Details is not null) { <div class="ds-hint">@t.Details</div> }
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="ds-section">
+            <h3>Parkoltatott számlák (@_data.ParkedInvoices.Count)</h3>
+            @if (_data.ParkedInvoices.Count == 0)
+            {
+                <p>Nincs parkoltatott számla.</p>
+            }
+            else
+            {
+                <ul class="desk-matches">
+                    @foreach (var i in _data.ParkedInvoices)
+                    {
+                        <li>
+                            <strong>@i.Number</strong> – @i.PatientName
+                            <span class="ds-hint">Lejár: @i.ParkingExpiresAtUtc?.ToString("yyyy-MM-dd")</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="ds-section">
+            <h3>Adatpótlásra váró rendelések (@_data.PendingOrders.Count)</h3>
+            @if (_data.PendingOrders.Count == 0)
+            {
+                <p>Nincs függő rendelés.</p>
+            }
+            else
+            {
+                <ul class="desk-matches">
+                    @foreach (var o in _data.PendingOrders)
+                    {
+                        <li><strong>@o.Number</strong> – @o.PatientName</li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private DashboardData? _data;
+
+    protected override async Task OnInitializedAsync()
+        => _data = await DashboardSvc.GetAsync();
+}

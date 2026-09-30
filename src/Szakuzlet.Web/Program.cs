@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Szakuzlet.Infrastructure;
 using Szakuzlet.Infrastructure.Persistence;
+using Szakuzlet.Web.Api;
 using Szakuzlet.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +12,9 @@ builder.Services.AddRazorComponents()
 
 // Belső szoftver rétegei (EF Core + PostgreSQL, KVL mock, szolgáltatások).
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Ütemezett automatizmusok (parkoltatás-lezárás, kihordási idő értesítők).
+builder.Services.AddHostedService<Szakuzlet.Web.BackgroundJobs.AutomationWorker>();
 
 var app = builder.Build();
 
@@ -23,6 +27,8 @@ using (var scope = app.Services.CreateScope())
         db.Database.Migrate();
     else
         db.Database.EnsureCreated();
+
+    await Szakuzlet.Infrastructure.Persistence.DataSeeder.SeedAsync(db);
 }
 
 // Configure the HTTP request pipeline.
@@ -38,5 +44,14 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// A telefonközpont (külső VoIP) REST végpontjai.
+app.MapCallCenterApi();
+
+// Logisztika, Timeline és Philips-import végpontok.
+app.MapLogisticsApi();
+
+// „ADATLAP HIÁNYOS” protokoll végpontjai.
+app.MapDataQualityApi();
 
 app.Run();

@@ -1,0 +1,110 @@
+@page "/idovonal"
+@using Szakuzlet.Application.Patients
+@using Szakuzlet.Application.Timeline
+@inject PatientLookupService Lookup
+@inject TimelineService Timeline
+@rendermode InteractiveServer
+
+<PageTitle>Ügyféltörténet – Idővonal</PageTitle>
+
+<div class="desk">
+    <header class="desk-head">
+        <h1>Ügyféltörténet – Idővonal</h1>
+        <p>Ügyfél előhívása, majd a teljes, összefésült előzmény egy nézetben.</p>
+    </header>
+
+    <div class="desk-search">
+        <label>Születési dátum</label>
+        <input type="date" @bind="_dob" class="ds-input" />
+        <button class="ds-submit" @onclick="Search" disabled="@_searching">
+            @(_searching ? "Keresés…" : "Ügyfél előhívása")
+        </button>
+
+        @if (_matches is not null && _timeline is null)
+        {
+            @if (_matches.Count == 0)
+            {
+                <p class="desk-note">Nincs találat.</p>
+            }
+            else
+            {
+                <ul class="desk-matches">
+                    @foreach (var m in _matches)
+                    {
+                        <li>
+                            <button class="desk-match" @onclick="() => Load(m)">
+                                <span class="desk-match-name">@m.FullName</span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+        }
+    </div>
+
+    @if (_timeline is not null)
+    {
+        @if (_timeline.PhilipsAlert is { } alert)
+        {
+            <div class="philips-alert">
+                ⚠ FIGYELEM: Philips-csereprojektben érintett ügyfél –
+                Jelenlegi gépcsere modellje: <strong>@alert.Model</strong>,
+                gyári száma: <strong>@alert.SerialNumber</strong>
+                @if (alert.ReplacedOn is not null) { <span>(csere: @alert.ReplacedOn?.ToString("yyyy-MM-dd"))</span> }
+            </div>
+        }
+
+        <div class="ds-section">
+            <h3>@_timeline.PatientName – idővonal (@_timeline.Items.Count esemény)</h3>
+            <button class="desk-back" @onclick="Reset">← Új keresés</button>
+
+            @if (_timeline.Items.Count == 0)
+            {
+                <p>Nincs rögzített esemény.</p>
+            }
+            else
+            {
+                <ul class="tl-list">
+                    @foreach (var item in _timeline.Items)
+                    {
+                        <li class="tl-item tl-@(item.Category.ToLower())">
+                            <div class="tl-date">@item.OccurredAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
+                            <div class="tl-body">
+                                <span class="tl-cat">@item.Category</span>
+                                <span class="tl-title">@item.Title</span>
+                                @if (item.Detail is not null) { <div class="tl-detail">@item.Detail</div> }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private DateTime? _dob;
+    private bool _searching;
+    private IReadOnlyList<PatientMatch>? _matches;
+    private PatientTimeline? _timeline;
+
+    private async Task Search()
+    {
+        if (_dob is null) return;
+        _searching = true;
+        var result = await Lookup.FindByDateOfBirthAsync(DateOnly.FromDateTime(_dob.Value));
+        _matches = result.Matches;
+        _timeline = null;
+        _searching = false;
+    }
+
+    private async Task Load(PatientMatch m)
+        => _timeline = await Timeline.GetAsync(m.PatientId);
+
+    private void Reset()
+    {
+        _timeline = null;
+        _matches = null;
+        _dob = null;
+    }
+}

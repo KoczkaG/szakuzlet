@@ -1,0 +1,94 @@
+@page "/statisztika"
+@using Szakuzlet.Application.CallCenter
+@inject CallStatisticsService Stats
+@rendermode InteractiveServer
+
+<PageTitle>Vezetői hívásstatisztika</PageTitle>
+
+<div class="home">
+    <h1>Vezetői hívásstatisztika</h1>
+    <p class="home-lead">A hívásvégi jegyzetek összesített kimutatása.</p>
+
+    <div class="ds-section">
+        <div class="stat-range">
+            <label>Időszak kezdete</label>
+            <input type="date" class="ds-input" @bind="_from" />
+            <label>Vége</label>
+            <input type="date" class="ds-input" @bind="_to" />
+            <button class="ds-submit" @onclick="Load" disabled="@_loading">
+                @(_loading ? "Számítás…" : "Lekérdezés")
+            </button>
+        </div>
+    </div>
+
+    @if (_data is not null)
+    {
+        <div class="ds-section">
+            <h3>Hívások okainak megoszlása (@_data.TotalNotes jegyzet)</h3>
+            @if (_data.TotalNotes == 0)
+            {
+                <p>Nincs adat az időszakban.</p>
+            }
+            else
+            {
+                @foreach (var t in _data.TopicBreakdown)
+                {
+                    <div class="stat-row">
+                        <span class="stat-label">@t.Label</span>
+                        <span class="stat-bar-wrap">
+                            <span class="stat-bar" style="width:@(t.Percentage.ToString(System.Globalization.CultureInfo.InvariantCulture))%"></span>
+                        </span>
+                        <span class="stat-val">@t.Count (@t.Percentage.ToString(System.Globalization.CultureInfo.InvariantCulture)%)</span>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="ds-section">
+            <h3>Küldő alváslaborok / orvosok rangsora</h3>
+            @if (_data.ReferralRanking.Count == 0)
+            {
+                <p>Nincs rögzített küldő intézmény az időszakban.</p>
+            }
+            else
+            {
+                <ol class="stat-ranking">
+                    @foreach (var r in _data.ReferralRanking)
+                    {
+                        <li>
+                            <strong>@r.Name</strong>
+                            @if (r.DoctorName is not null) { <span class="ds-hint">(@r.DoctorName)</span> }
+                            <span class="stat-count">@r.Count beteg</span>
+                        </li>
+                    }
+                </ol>
+            }
+        </div>
+
+        <div class="ds-section">
+            <h3>Panaszok</h3>
+            <p class="stat-complaints">@_data.ComplaintCount rögzített panasz az időszakban.</p>
+        </div>
+    }
+</div>
+
+@code {
+    private DateTime? _from = DateTime.UtcNow.Date.AddMonths(-1);
+    private DateTime? _to = DateTime.UtcNow.Date.AddDays(1);
+    private bool _loading;
+    private CallStatistics? _data;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        _loading = true;
+        try
+        {
+            var from = new DateTimeOffset(_from ?? DateTime.UtcNow.Date.AddMonths(-1), TimeSpan.Zero);
+            var to = new DateTimeOffset(_to ?? DateTime.UtcNow.Date.AddDays(1), TimeSpan.Zero);
+            _data = await Stats.GetAsync(from, to);
+        }
+        finally { _loading = false; }
+    }
+}

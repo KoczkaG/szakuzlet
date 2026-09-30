@@ -13,6 +13,21 @@ public interface IAppDbContext
     DbSet<DataSheet> DataSheets { get; }
     DbSet<ConsentRecord> Consents { get; }
     DbSet<AuditLogEntry> AuditLog { get; }
+    DbSet<TimelineEvent> TimelineEvents { get; }
+    DbSet<PatientTask> Tasks { get; }
+    DbSet<Invoice> Invoices { get; }
+    DbSet<Order> Orders { get; }
+    DbSet<BusinessHour> BusinessHours { get; }
+    DbSet<CalendarOverride> CalendarOverrides { get; }
+    DbSet<CallRecord> Calls { get; }
+    DbSet<CallbackRequest> Callbacks { get; }
+    DbSet<PatientPhone> Phones { get; }
+    DbSet<InvoiceLine> InvoiceLines { get; }
+    DbSet<Shipment> Shipments { get; }
+    DbSet<PhilipsReplacement> PhilipsReplacements { get; }
+    DbSet<CallNote> CallNotes { get; }
+    DbSet<ReferralSource> ReferralSources { get; }
+    DbSet<DataCompletionRequest> DataCompletionRequests { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

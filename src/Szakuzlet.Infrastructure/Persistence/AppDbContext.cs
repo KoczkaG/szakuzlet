@@ -12,8 +12,34 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<DataSheet> DataSheets => Set<DataSheet>();
     public DbSet<ConsentRecord> Consents => Set<ConsentRecord>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
+    public DbSet<TimelineEvent> TimelineEvents => Set<TimelineEvent>();
+    public DbSet<PatientTask> Tasks => Set<PatientTask>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<BusinessHour> BusinessHours => Set<BusinessHour>();
+    public DbSet<CalendarOverride> CalendarOverrides => Set<CalendarOverride>();
+    public DbSet<CallRecord> Calls => Set<CallRecord>();
+    public DbSet<CallbackRequest> Callbacks => Set<CallbackRequest>();
+    public DbSet<PatientPhone> Phones => Set<PatientPhone>();
+    public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
+    public DbSet<Shipment> Shipments => Set<Shipment>();
+    public DbSet<PhilipsReplacement> PhilipsReplacements => Set<PhilipsReplacement>();
+    public DbSet<CallNote> CallNotes => Set<CallNote>();
+    public DbSet<ReferralSource> ReferralSources => Set<ReferralSource>();
+    public DbSet<DataCompletionRequest> DataCompletionRequests => Set<DataCompletionRequest>();
 
     Task<int> IAppDbContext.SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder cb)
+    {
+        // SQLite nem tud DateTimeOffset-et rendezni/összehasonlítani natívan.
+        // Fejlesztői SQLite alatt long (Unix ms) formában tároljuk; PostgreSQL natívan kezeli.
+        if (Database.IsSqlite())
+        {
+            cb.Properties<DateTimeOffset>().HaveConversion<DateTimeOffsetToLongConverter>();
+            cb.Properties<DateTimeOffset?>().HaveConversion<NullableDateTimeOffsetToLongConverter>();
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -68,6 +94,149 @@ public class AppDbContext : DbContext, IAppDbContext
             e.Property(x => x.Actor).IsRequired().HasMaxLength(120);
             e.Property(x => x.IpAddress).HasMaxLength(64);
             e.HasIndex(x => new { x.EntityType, x.EntityId });
+        });
+
+        b.Entity<TimelineEvent>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.EventType).IsRequired().HasMaxLength(100);
+            e.Property(x => x.Summary).IsRequired().HasMaxLength(1000);
+            e.HasOne(x => x.Patient).WithMany(p => p.TimelineEvents)
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.PatientId, x.OccurredAtUtc });
+        });
+
+        b.Entity<PatientTask>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Title).IsRequired().HasMaxLength(200);
+            e.Property(x => x.Details).HasMaxLength(2000);
+            e.HasOne(x => x.Patient).WithMany(p => p.Tasks)
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.Status);
+        });
+
+        b.Entity<Invoice>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Number).IsRequired().HasMaxLength(50);
+            e.HasOne(x => x.Patient).WithMany(p => p.Invoices)
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.Status);
+        });
+
+        b.Entity<Order>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Number).IsRequired().HasMaxLength(50);
+            e.Property(x => x.DataCompletionToken).HasMaxLength(128);
+            e.HasOne(x => x.Patient).WithMany(p => p.Orders)
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.DataCompletionToken);
+            e.HasIndex(x => x.Status);
+        });
+
+        b.Entity<BusinessHour>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Day).IsUnique();
+        });
+
+        b.Entity<CalendarOverride>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Label).IsRequired().HasMaxLength(120);
+            e.HasIndex(x => x.Date).IsUnique();
+        });
+
+        b.Entity<CallRecord>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.PhoneNumber).IsRequired().HasMaxLength(30);
+            e.Property(x => x.IvrMenu).HasMaxLength(100);
+            e.Property(x => x.RecordingReference).HasMaxLength(300);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => x.PhoneNumber);
+        });
+
+        b.Entity<CallbackRequest>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.PhoneNumber).IsRequired().HasMaxLength(30);
+            e.Property(x => x.Resolution).HasMaxLength(300);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => new { x.PhoneNumber, x.Status });
+        });
+
+        b.Entity<PatientPhone>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Number).IsRequired().HasMaxLength(30);
+            e.Property(x => x.ContactName).HasMaxLength(200);
+            e.HasOne(x => x.Patient).WithMany(p => p.Phones)
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<InvoiceLine>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.ItemCode).HasMaxLength(50);
+            e.Property(x => x.ProductName).IsRequired().HasMaxLength(300);
+            e.HasOne(x => x.Invoice).WithMany(i => i.Lines)
+                .HasForeignKey(x => x.InvoiceId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Shipment>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.TrackingNumber).IsRequired().HasMaxLength(60);
+            e.Property(x => x.ReceivedBy).HasMaxLength(200);
+            e.HasOne(x => x.Patient).WithMany(p => p.Shipments)
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.TrackingNumber);
+        });
+
+        b.Entity<PhilipsReplacement>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.ReplacementModel).IsRequired().HasMaxLength(200);
+            e.Property(x => x.SerialNumber).IsRequired().HasMaxLength(100);
+            // Egy beteghez legfeljebb egy csereprojekt-adat.
+            e.HasOne(x => x.Patient).WithOne(p => p.PhilipsReplacement)
+                .HasForeignKey<PhilipsReplacement>(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.SerialNumber);
+        });
+
+        b.Entity<ReferralSource>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            e.Property(x => x.DoctorName).HasMaxLength(200);
+        });
+
+        b.Entity<CallNote>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Summary).IsRequired().HasMaxLength(2000);
+            e.HasOne(x => x.Call).WithMany()
+                .HasForeignKey(x => x.CallId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.ReferralSource).WithMany()
+                .HasForeignKey(x => x.ReferralSourceId).OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => x.CallId).IsUnique();
+        });
+
+        b.Entity<DataCompletionRequest>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Token).IsRequired().HasMaxLength(128);
+            e.Property(x => x.MissingFields).HasMaxLength(200);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.Token).IsUnique();
         });
     }
 }
