@@ -32,4 +32,13 @@ public class CallRecord
 
     /// <summary>Igaz, ha a hívást fogadták; hamis, ha nem fogadott (önürítő listára kerül).</summary>
     public bool Answered { get; set; }
+
+    /// <summary>Kimenő hívásnál: melyik számot hívtuk (típus szerint, pl. Kapcsolattartó).</summary>
+    public PhoneKind? DialedPhoneKind { get; set; }
+
+    /// <summary>
+    /// Opcionális kapcsolat egy szerviz-munkalappal (V. modul). A szervizből indított kimenő
+    /// hívás ide linkelődik; a szerviz-munkalap entitás egy későbbi modulban készül el.
+    /// </summary>
+    public Guid? ServiceWorksheetId { get; set; }
 }

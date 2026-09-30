@@ -68,6 +68,7 @@ public static class DependencyInjection
         services.AddScoped<WearExpiryService>();
         services.AddScoped<Szakuzlet.Application.Calendar.OpeningHoursService>();
         services.AddScoped<Szakuzlet.Application.CallCenter.CallCenterService>();
+        services.AddScoped<Szakuzlet.Application.CallCenter.OutboundCallService>();
 
         return services;
     }

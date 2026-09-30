@@ -1,0 +1,165 @@
+@page "/hivasok"
+@using Szakuzlet.Application.CallCenter
+@using Szakuzlet.Application.Patients
+@using Szakuzlet.Domain.Enums
+@inject PatientLookupService Lookup
+@inject OutboundCallService Outbound
+@rendermode InteractiveServer
+
+<PageTitle>Kimenő hívás (Click-to-Call)</PageTitle>
+
+<div class="desk">
+    <header class="desk-head">
+        <h1>Kimenő hívás – Click-to-Call</h1>
+        <p>Ügyfél előhívása, majd hívásindítás bármelyik regisztrált szám mellett.</p>
+    </header>
+
+    <div class="desk-search">
+        <label>Születési dátum</label>
+        <input type="date" @bind="_dob" class="ds-input" />
+        <button class="ds-submit" @onclick="Search" disabled="@_searching">
+            @(_searching ? "Keresés…" : "Ügyfél előhívása")
+        </button>
+
+        @if (_matches is not null)
+        {
+            @if (_matches.Count == 0)
+            {
+                <p class="desk-note">Nincs találat.</p>
+            }
+            else
+            {
+                <ul class="desk-matches">
+                    @foreach (var m in _matches)
+                    {
+                        <li>
+                            <button class="desk-match" @onclick="() => LoadNumbers(m)">
+                                <span class="desk-match-name">@m.FullName</span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+        }
+    </div>
+
+    @if (_numbers is not null)
+    {
+        <div class="ds-section">
+            <h3>@_selectedName – hívható számok</h3>
+            @if (_numbers.Count == 0)
+            {
+                <p>Nincs rögzített telefonszám.</p>
+            }
+            else
+            {
+                <ul class="desk-matches">
+                    @foreach (var n in _numbers)
+                    {
+                        <li class="call-row">
+                            <span><strong>@HuKind(n.Kind)</strong>: @n.Number
+                                @if (n.ContactName is not null) { <span class="ds-hint">(@n.ContactName)</span> }
+                                @if (!n.LegallyApproved) { <span class="desk-badge">Nincs jóváhagyva</span> }
+                            </span>
+                            <button class="ds-submit call-btn" disabled="@(!n.LegallyApproved)"
+                                    @onclick="() => StartCall(n)">📞 Hívás</button>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+
+    @if (_active is not null)
+    {
+        <div class="call-panel">
+            <h3>Folyamatban lévő hívás – @_active.DialedNumber</h3>
+
+            <div class="call-gdpr">
+                <strong>Kötelezően bemondandó:</strong>
+                <p>@_active.GdprPrompt</p>
+            </div>
+
+            <details class="call-suspicion">
+                <summary>Ha az ügyfél gyanakszik a rögzítés miatt…</summary>
+                <p>@_active.SuspicionScript</p>
+            </details>
+
+            <div class="call-actions">
+                <button class="ds-submit call-stop" @onclick="StopRecording" disabled="@_recordingStopped">
+                    @(_recordingStopped ? "Rögzítés leállítva" : "Hangrögzítés leállítása")
+                </button>
+                <button class="ds-submit" @onclick="() => EndCall(true)">Hívás vége (fogadva)</button>
+                <button class="desk-back" @onclick="() => EndCall(false)">Nem fogadott</button>
+            </div>
+            @if (_callEnded)
+            {
+                <p class="ds-hint">A hívás lezárva, az esemény a beteg idővonalára került.</p>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private DateTime? _dob;
+    private bool _searching;
+    private IReadOnlyList<PatientMatch>? _matches;
+
+    private Guid _selectedId;
+    private string _selectedName = string.Empty;
+    private IReadOnlyList<DialableNumber>? _numbers;
+
+    private OutboundCallStarted? _active;
+    private bool _recordingStopped;
+    private bool _callEnded;
+
+    private async Task Search()
+    {
+        if (_dob is null) return;
+        _searching = true;
+        var result = await Lookup.FindByDateOfBirthAsync(DateOnly.FromDateTime(_dob.Value));
+        _matches = result.Matches;
+        _numbers = null; _active = null;
+        _searching = false;
+    }
+
+    private async Task LoadNumbers(PatientMatch m)
+    {
+        _selectedId = m.PatientId;
+        _selectedName = m.FullName;
+        _numbers = await Outbound.GetDialableNumbersAsync(m.PatientId);
+        _active = null;
+    }
+
+    private async Task StartCall(DialableNumber n)
+    {
+        _recordingStopped = false;
+        _callEnded = false;
+        _active = await Outbound.StartCallAsync(_selectedId, n.Number, n.Kind);
+    }
+
+    private async Task StopRecording()
+    {
+        if (_active is null) return;
+        await Outbound.StopRecordingAsync(_active.CallId, "PULTOS");
+        _recordingStopped = true;
+    }
+
+    private async Task EndCall(bool answered)
+    {
+        if (_active is null) return;
+        await Outbound.EndCallAsync(_active.CallId, answered,
+            answered && !_recordingStopped ? $"rec-{_active.CallId}" : null);
+        _callEnded = true;
+    }
+
+    private static string HuKind(PhoneKind k) => k switch
+    {
+        PhoneKind.BetegMobil => "Beteg mobil",
+        PhoneKind.HaziSzam => "Házi szám",
+        PhoneKind.Kapcsolattarto => "Kapcsolattartó",
+        PhoneKind.Hozzatartozo => "Hozzátartozó",
+        PhoneKind.Megbizott => "Megbízott",
+        _ => k.ToString()
+    };
+}

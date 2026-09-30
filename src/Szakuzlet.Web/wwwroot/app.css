@@ -110,3 +110,14 @@ h1:focus {
 .oh-table { width:100%; border-collapse:collapse; }
 .oh-table td { padding:.4rem .6rem; border-bottom:1px solid #eee; }
 .oh-table td:first-child { font-weight:600; width:120px; }
+
+.call-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+.call-btn { padding:.35rem .8rem; }
+.call-panel { background:#fff; border:2px solid #1b6ec2; border-radius:8px; padding:1.25rem; margin-top:1rem; }
+.call-gdpr { background:#fff8e1; border-radius:6px; padding:.75rem 1rem; margin:.5rem 0; }
+.call-gdpr p { margin:.3rem 0 0; font-style:italic; }
+.call-suspicion { margin:.75rem 0; }
+.call-suspicion summary { cursor:pointer; color:#1b6ec2; font-weight:600; }
+.call-suspicion p { background:#f5f9ff; border-radius:6px; padding:.75rem 1rem; margin-top:.5rem; }
+.call-actions { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; margin-top:.5rem; }
+.call-stop { background:#b02a2a; }

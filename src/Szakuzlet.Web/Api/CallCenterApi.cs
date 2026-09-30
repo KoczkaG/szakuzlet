@@ -73,6 +73,48 @@ public static class CallCenterApi
             var cb = await svc.RequestBusyDeskCallbackAsync(req.PhoneNumber, ct);
             return Results.Ok(new { callbackId = cb.Id });
         });
+
+        // --- Kimenő hívások (Click-to-Call) ---
+        var o = app.MapGroup("/api/outbound").WithTags("Outbound");
+
+        // A beteg összes hívható száma (Click-to-Call ikon mellette).
+        o.MapGet("/patients/{patientId:guid}/numbers", async (Guid patientId,
+            OutboundCallService svc, CancellationToken ct) =>
+        {
+            var numbers = await svc.GetDialableNumbersAsync(patientId, ct);
+            return Results.Ok(numbers);
+        });
+
+        // Kimenő hívás indítása – visszaadja a felugró adatlap-kontextust + GDPR sablont.
+        o.MapPost("/start", async (StartOutboundRequest req, OutboundCallService svc, CancellationToken ct) =>
+        {
+            var kind = Enum.Parse<PhoneKind>(req.Kind, ignoreCase: true);
+            try
+            {
+                var result = await svc.StartCallAsync(req.PatientId, req.Number, kind, req.ServiceWorksheetId, ct);
+                return Results.Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.NotFound(new { error = ex.Message });
+            }
+        });
+
+        // Hangrögzítés leállítása (a hívott fél tiltotta) – Audit Trail.
+        o.MapPost("/{callId:guid}/stop-recording", async (Guid callId, StopRecordingRequest req,
+            OutboundCallService svc, CancellationToken ct) =>
+        {
+            await svc.StopRecordingAsync(callId, req.Actor ?? "KEZELO", ct);
+            return Results.NoContent();
+        });
+
+        // Kimenő hívás vége.
+        o.MapPost("/{callId:guid}/end", async (Guid callId, EndCallRequest req,
+            OutboundCallService svc, CancellationToken ct) =>
+        {
+            await svc.EndCallAsync(callId, req.Answered, req.RecordingReference, ct);
+            return Results.NoContent();
+        });
     }
 }
 
@@ -80,3 +122,5 @@ public record IncomingCallRequest(string PhoneNumber, string? IvrMenu);
 public record EndCallRequest(bool Answered, string? RecordingReference);
 public record RecordingRequest(string State, string? Actor, string? Reason);
 public record CallbackRequestDto(string PhoneNumber);
+public record StartOutboundRequest(Guid PatientId, string Number, string Kind, Guid? ServiceWorksheetId);
+public record StopRecordingRequest(string? Actor);

@@ -21,6 +21,7 @@ public interface IAppDbContext
     DbSet<CalendarOverride> CalendarOverrides { get; }
     DbSet<CallRecord> Calls { get; }
     DbSet<CallbackRequest> Callbacks { get; }
+    DbSet<PatientPhone> Phones { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

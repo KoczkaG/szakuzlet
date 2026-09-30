@@ -20,6 +20,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<CalendarOverride> CalendarOverrides => Set<CalendarOverride>();
     public DbSet<CallRecord> Calls => Set<CallRecord>();
     public DbSet<CallbackRequest> Callbacks => Set<CallbackRequest>();
+    public DbSet<PatientPhone> Phones => Set<PatientPhone>();
 
     Task<int> IAppDbContext.SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
 
@@ -161,6 +162,15 @@ public class AppDbContext : DbContext, IAppDbContext
             e.HasOne(x => x.Patient).WithMany()
                 .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => new { x.PhoneNumber, x.Status });
+        });
+
+        b.Entity<PatientPhone>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Number).IsRequired().HasMaxLength(30);
+            e.Property(x => x.ContactName).HasMaxLength(200);
+            e.HasOne(x => x.Patient).WithMany(p => p.Phones)
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

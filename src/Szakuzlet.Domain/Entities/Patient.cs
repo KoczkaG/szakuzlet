@@ -52,6 +52,7 @@ public class Patient
     public ICollection<PatientTask> Tasks { get; set; } = new List<PatientTask>();
     public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
     public ICollection<Order> Orders { get; set; } = new List<Order>();
+    public ICollection<PatientPhone> Phones { get; set; } = new List<PatientPhone>();
 
     /// <summary>
     /// Igaz, ha bármelyik kötelező kontaktmező (e-mail, mobil, TAJ) hiányzik.

@@ -42,6 +42,18 @@ alapján épül fel, moduláris megközelítéssel.
   answered, end, recording, callback.
 - **Nyitvatartás admin UI** (`/nyitvatartas`).
 
+**I. Modul / C) – Szoftverből indított kimenő hívások (Click-to-Call) és Jogi Védelem**
+
+- **Click-to-Call** minden regisztrált szám mellett: beteg mobil, házi szám és jogilag
+  jóváhagyott kapcsolattartó/hozzátartozó/megbízott (`PatientPhone`). Nem jóváhagyott
+  kapcsolattartói szám nem hívható.
+- **Azonnali adatlap-kontextus** hívásindításkor + Timeline-esemény a beteg történetén.
+- **Kimenő hangrögzítés**: alapból bekapcsolva; lezáráskor a hangfájl-hivatkozás rögzül.
+- **GDPR figyelmeztetés + leállítási logika**: kötelező bemondandó sablon és a gyanakvás
+  kezelésére szánt belső érvkészlet a kezelő képernyőjén.
+- **Módosíthatatlan Audit Trail** a rögzítés leállításakor (idő, kezelő, ok).
+- **REST API** (`/api/outbound/...`) és **Click-to-Call UI** (`/hivasok`).
+
 ## Architektúra
 
 Réteges felépítés, hogy a KVL vállalatirányítási rendszer API-jaira később
@@ -102,6 +114,13 @@ ASPNETCORE_ENVIRONMENT=Development dotnet run --project src/Szakuzlet.Web
 - `POST /api/callcenter/{callId}/recording` – hangrögzítés döntés + Audit Trail
 - `POST /api/callcenter/callback/after-hours` – munkaidőn kívüli visszahívás
 - `POST /api/callcenter/callback/busy-desk` – foglalt pult miatti visszahívás
+
+### Kimenő hívás (Click-to-Call) REST API
+
+- `GET  /api/outbound/patients/{patientId}/numbers` – a beteg hívható számai
+- `POST /api/outbound/start` – kimenő hívás indítása (adatlap-kontextus + GDPR sablon)
+- `POST /api/outbound/{callId}/stop-recording` – hangrögzítés leállítása + Audit Trail
+- `POST /api/outbound/{callId}/end` – kimenő hívás vége
 
 ## Tesztek
 
