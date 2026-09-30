@@ -32,6 +32,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<ExpressIntake> ExpressIntakes => Set<ExpressIntake>();
     public DbSet<PostalTrial> PostalTrials => Set<PostalTrial>();
+    public DbSet<EducationVideo> EducationVideos => Set<EducationVideo>();
+    public DbSet<EducationAcknowledgement> EducationAcknowledgements => Set<EducationAcknowledgement>();
 
     Task<int> IAppDbContext.SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
 
@@ -272,6 +274,24 @@ public class AppDbContext : DbContext, IAppDbContext
             e.Property(x => x.Code).IsRequired().HasMaxLength(60);
             e.HasIndex(x => x.Code).IsUnique();
             e.HasIndex(x => x.Used);
+        });
+
+        b.Entity<EducationVideo>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.ProductModel).IsRequired().HasMaxLength(200);
+            e.Property(x => x.Title).IsRequired().HasMaxLength(200);
+            e.Property(x => x.Url).IsRequired().HasMaxLength(500);
+            e.HasIndex(x => x.ProductModel);
+        });
+
+        b.Entity<EducationAcknowledgement>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Products).HasMaxLength(500);
+            e.Property(x => x.FromIp).HasMaxLength(64);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<PostalTrial>(e =>

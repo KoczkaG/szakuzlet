@@ -33,6 +33,8 @@ public interface IAppDbContext
     DbSet<Contract> Contracts { get; }
     DbSet<ExpressIntake> ExpressIntakes { get; }
     DbSet<PostalTrial> PostalTrials { get; }
+    DbSet<EducationVideo> EducationVideos { get; }
+    DbSet<EducationAcknowledgement> EducationAcknowledgements { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
