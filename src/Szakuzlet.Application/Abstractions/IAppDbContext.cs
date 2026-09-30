@@ -32,6 +32,7 @@ public interface IAppDbContext
     DbSet<EanCode> EanCodes { get; }
     DbSet<Contract> Contracts { get; }
     DbSet<ExpressIntake> ExpressIntakes { get; }
+    DbSet<PostalTrial> PostalTrials { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

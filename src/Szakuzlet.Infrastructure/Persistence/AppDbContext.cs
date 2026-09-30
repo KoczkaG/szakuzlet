@@ -31,6 +31,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<EanCode> EanCodes => Set<EanCode>();
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<ExpressIntake> ExpressIntakes => Set<ExpressIntake>();
+    public DbSet<PostalTrial> PostalTrials => Set<PostalTrial>();
 
     Task<int> IAppDbContext.SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
 
@@ -271,6 +272,19 @@ public class AppDbContext : DbContext, IAppDbContext
             e.Property(x => x.Code).IsRequired().HasMaxLength(60);
             e.HasIndex(x => x.Code).IsUnique();
             e.HasIndex(x => x.Used);
+        });
+
+        b.Entity<PostalTrial>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.OrderNumber).IsRequired().HasMaxLength(50);
+            e.Property(x => x.DeviceModel).HasMaxLength(200);
+            e.Property(x => x.MaskModel).HasMaxLength(200);
+            e.Property(x => x.PayableAmount).HasColumnType("numeric(12,2)");
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.OrderNumber).IsUnique();
+            e.HasIndex(x => x.Status);
         });
 
         b.Entity<ExpressIntake>(e =>

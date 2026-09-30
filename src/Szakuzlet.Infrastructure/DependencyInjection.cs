@@ -78,6 +78,12 @@ public static class DependencyInjection
         services.AddScoped<Szakuzlet.Application.Billing.SettlementService>();
         services.AddScoped<Szakuzlet.Application.Contracts.ContractService>();
         services.AddScoped<Szakuzlet.Application.Express.ExpressIntakeService>();
+        services.AddScoped<Szakuzlet.Application.Postal.PostalTrialService>();
+
+        // Banki szinkron mock a valós banki API-ig.
+        services.AddSingleton<Szakuzlet.Infrastructure.Banking.MockBankClient>();
+        services.AddSingleton<Szakuzlet.Application.Banking.IBankClient>(
+            sp => sp.GetRequiredService<Szakuzlet.Infrastructure.Banking.MockBankClient>());
 
         // eIDAS aláírás, dokumentum-generátor és OCR mockok a valós szolgáltatókig.
         services.AddSingleton<Szakuzlet.Infrastructure.Signing.MockSignatureService>();
