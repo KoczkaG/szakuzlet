@@ -13,6 +13,9 @@ public enum PatientTaskType
     /// <summary>„Zéró hozzájárulás” radar által generált tisztázó telefonhívás.</summary>
     ZeroHozzajarulasTisztazas = 0,
 
+    /// <summary>Hívásvégi jegyzet által generált visszahívás / teendő.</summary>
+    HivasvegiVisszahivas = 1,
+
     /// <summary>Egyéb, kézzel vagy más folyamat által generált teendő.</summary>
     Egyeb = 100
 }

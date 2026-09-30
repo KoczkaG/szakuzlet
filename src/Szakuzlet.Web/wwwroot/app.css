@@ -135,3 +135,18 @@ h1:focus {
 .tl-detail { color:#444; font-size:.9rem; margin-top:.15rem; }
 .tl-számla::before { background:#0a7d33; }
 .tl-csomag::before { background:#c77700; }
+
+.note-panel { border-color:#c77700; }
+.note-panel h3 { color:#c77700; }
+.note-topics { display:flex; flex-direction:column; gap:.15rem; }
+.stat-range { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+.stat-range .ds-input { max-width:170px; }
+.stat-row { display:flex; align-items:center; gap:.75rem; margin:.35rem 0; }
+.stat-label { min-width:230px; }
+.stat-bar-wrap { flex:1; background:#eef4fc; border-radius:6px; height:16px; overflow:hidden; }
+.stat-bar { display:block; height:100%; background:#1b6ec2; }
+.stat-val { min-width:90px; text-align:right; font-size:.9rem; color:#444; }
+.stat-ranking { padding-left:1.2rem; }
+.stat-ranking li { margin:.3rem 0; }
+.stat-count { color:#1b6ec2; font-weight:600; margin-left:.5rem; }
+.stat-complaints { font-size:1.1rem; font-weight:600; color:#b02a2a; }

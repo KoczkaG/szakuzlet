@@ -24,7 +24,22 @@ public static class DataSeeder
                 Closed(DayOfWeek.Sunday));
             await db.SaveChangesAsync(ct);
         }
+
+        if (!await db.ReferralSources.AnyAsync(ct))
+        {
+            db.ReferralSources.AddRange(
+                Referral("Városi Kórház Alváslabor", "Dr. Kis Péter"),
+                Referral("Fővárosi Tüdőgyógyászat", "Dr. Nagy Éva"),
+                Referral("Megyei Kórház Alvásközpont", null),
+                Referral("Magánrendelő – SomnoMed", "Dr. Tóth Gábor"));
+            await db.SaveChangesAsync(ct);
+        }
     }
+
+    private static ReferralSource Referral(string name, string? doctor) => new()
+    {
+        Id = Guid.NewGuid(), Name = name, DoctorName = doctor, IsActive = true
+    };
 
     private static BusinessHour Open(DayOfWeek day, TimeOnly opens, TimeOnly closes) => new()
     {

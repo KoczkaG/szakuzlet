@@ -24,6 +24,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<PhilipsReplacement> PhilipsReplacements => Set<PhilipsReplacement>();
+    public DbSet<CallNote> CallNotes => Set<CallNote>();
+    public DbSet<ReferralSource> ReferralSources => Set<ReferralSource>();
 
     Task<int> IAppDbContext.SaveChangesAsync(CancellationToken ct) => base.SaveChangesAsync(ct);
 
@@ -204,6 +206,26 @@ public class AppDbContext : DbContext, IAppDbContext
             e.HasOne(x => x.Patient).WithOne(p => p.PhilipsReplacement)
                 .HasForeignKey<PhilipsReplacement>(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => x.SerialNumber);
+        });
+
+        b.Entity<ReferralSource>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            e.Property(x => x.DoctorName).HasMaxLength(200);
+        });
+
+        b.Entity<CallNote>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Summary).IsRequired().HasMaxLength(2000);
+            e.HasOne(x => x.Call).WithMany()
+                .HasForeignKey(x => x.CallId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.ReferralSource).WithMany()
+                .HasForeignKey(x => x.ReferralSourceId).OnDelete(DeleteBehavior.SetNull);
+            e.HasIndex(x => x.CallId).IsUnique();
         });
     }
 }

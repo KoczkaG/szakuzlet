@@ -4,6 +4,7 @@
 @using Szakuzlet.Domain.Enums
 @inject PatientLookupService Lookup
 @inject OutboundCallService Outbound
+@inject CallNoteService Notes
 @rendermode InteractiveServer
 
 <PageTitle>Kimenő hívás (Click-to-Call)</PageTitle>
@@ -85,17 +86,73 @@
                 <p>@_active.SuspicionScript</p>
             </details>
 
-            <div class="call-actions">
-                <button class="ds-submit call-stop" @onclick="StopRecording" disabled="@_recordingStopped">
-                    @(_recordingStopped ? "Rögzítés leállítva" : "Hangrögzítés leállítása")
-                </button>
-                <button class="ds-submit" @onclick="() => EndCall(true)">Hívás vége (fogadva)</button>
-                <button class="desk-back" @onclick="() => EndCall(false)">Nem fogadott</button>
-            </div>
-            @if (_callEnded)
+            @if (!_callEnded)
             {
-                <p class="ds-hint">A hívás lezárva, az esemény a beteg idővonalára került.</p>
+                <div class="call-actions">
+                    <button class="ds-submit call-stop" @onclick="StopRecording" disabled="@_recordingStopped">
+                        @(_recordingStopped ? "Rögzítés leállítva" : "Hangrögzítés leállítása")
+                    </button>
+                    <button class="ds-submit" @onclick="() => EndCall(true)">Hívás vége (fogadva)</button>
+                    <button class="desk-back" @onclick="() => EndCall(false)">Nem fogadott</button>
+                </div>
             }
+        </div>
+    }
+
+    @if (_callEnded && !_noteSaved)
+    {
+        <div class="call-panel note-panel">
+            <h3>⚠ Hívásvégi jegyzet – kötelező kitöltés</h3>
+            <p class="ds-hint">A hívás lezárult. A jegyzet mentéséig nem léphet tovább.</p>
+
+            <div class="ds-field">
+                <label>Témakör(ök)</label>
+                <div class="note-topics">
+                    <label class="ds-check"><input type="checkbox" @bind="_tUj" /> Új ügyfél információ</label>
+                    <label class="ds-check"><input type="checkbox" @bind="_tRend" /> Rendelés leadás</label>
+                    <label class="ds-check"><input type="checkbox" @bind="_tVeny" /> Vénybeváltás</label>
+                    <label class="ds-check"><input type="checkbox" @bind="_tMaszk" /> Maszkbeállítás / terápiás kérdés</label>
+                    <label class="ds-check"><input type="checkbox" @bind="_tSzamla" /> Számlázás / pénzügy</label>
+                    <label class="ds-check"><input type="checkbox" @bind="_tSzerviz" /> Szerviz / garancia</label>
+                    <label class="ds-check"><input type="checkbox" @bind="_tPanasz" /> Panaszkezelés</label>
+                </div>
+            </div>
+
+            <div class="ds-field">
+                <label>Küldő intézmény / alváslabor</label>
+                <select class="ds-input" @bind="_referralId">
+                    <option value="">– nincs / nem releváns –</option>
+                    @foreach (var r in _referrals)
+                    {
+                        <option value="@r.Id">@r.Name @(r.DoctorName is null ? "" : $"({r.DoctorName})")</option>
+                    }
+                </select>
+            </div>
+
+            <div class="ds-field">
+                <label>Összefoglaló (kötelező)</label>
+                <textarea class="ds-input" rows="3" @bind="_summary"
+                          placeholder="A beszélgetés lényege és a megbeszélt megoldás…"></textarea>
+            </div>
+
+            <label class="ds-check">
+                <input type="checkbox" @bind="_followUp" /> Visszahívás / teendő szükséges
+            </label>
+
+            @if (_noteError is not null)
+            {
+                <div class="desk-alert">@_noteError</div>
+            }
+            <button class="ds-submit" @onclick="SaveNote" disabled="@_savingNote">
+                @(_savingNote ? "Mentés…" : "Jegyzet mentése")
+            </button>
+        </div>
+    }
+    else if (_noteSaved)
+    {
+        <div class="portal-done">
+            <h2>Jegyzet elmentve</h2>
+            <p>A jegyzet a beteg idővonalára került@(_followUp ? ", és visszahívási feladat keletkezett." : ".")</p>
         </div>
     }
 </div>
@@ -112,6 +169,19 @@
     private OutboundCallStarted? _active;
     private bool _recordingStopped;
     private bool _callEnded;
+
+    // Hívásvégi jegyzet állapot.
+    private IReadOnlyList<Szakuzlet.Domain.Entities.ReferralSource> _referrals = new List<Szakuzlet.Domain.Entities.ReferralSource>();
+    private bool _tUj, _tRend, _tVeny, _tMaszk, _tSzamla, _tSzerviz, _tPanasz;
+    private string? _referralId;
+    private string _summary = string.Empty;
+    private bool _followUp;
+    private bool _savingNote;
+    private bool _noteSaved;
+    private string? _noteError;
+
+    protected override async Task OnInitializedAsync()
+        => _referrals = await Notes.GetReferralSourcesAsync();
 
     private async Task Search()
     {
@@ -151,6 +221,37 @@
         await Outbound.EndCallAsync(_active.CallId, answered,
             answered && !_recordingStopped ? $"rec-{_active.CallId}" : null);
         _callEnded = true;
+        // A kényszerített hívásvégi jegyzet-ablak most nyílik meg.
+        _noteSaved = false;
+        _noteError = null;
+    }
+
+    private async Task SaveNote()
+    {
+        if (_active is null) return;
+        _savingNote = true;
+        _noteError = null;
+        try
+        {
+            var topics = CallTopic.None;
+            if (_tUj) topics |= CallTopic.UjUgyfelInfo;
+            if (_tRend) topics |= CallTopic.RendelesLeadas;
+            if (_tVeny) topics |= CallTopic.Venybevaltas;
+            if (_tMaszk) topics |= CallTopic.MaszkbeallitasTerapiasKerdes;
+            if (_tSzamla) topics |= CallTopic.SzamlazasPenzugy;
+            if (_tSzerviz) topics |= CallTopic.SzervizGarancia;
+            if (_tPanasz) topics |= CallTopic.Panaszkezeles;
+
+            Guid? referral = Guid.TryParse(_referralId, out var rid) ? rid : null;
+            await Notes.SaveAsync(_active.CallId,
+                new CallNoteInput(topics, referral, _summary, _followUp));
+            _noteSaved = true;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _noteError = ex.Message;
+        }
+        finally { _savingNote = false; }
     }
 
     private static string HuKind(PhoneKind k) => k switch

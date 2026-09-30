@@ -66,6 +66,18 @@ alapján épül fel, moduláris megközelítéssel.
   a beteg megnyitásakor (modell + gyári szám).
 - **UI** (`/idovonal`): görgethető, kategorizált idővonal + Philips-riasztás sáv.
 
+**I. Modul / E) – Bővített Hívásvégi Jegyzet és Statisztikai Dashboard**
+
+- **Kényszerített hívásvégi jegyzet-ablak** (`CallNoteService`): a hívás lezárásakor kötelező
+  kitölteni; a UI blokkolja a továbblépést, míg a jegyzet nincs mentve.
+- **Strukturált mezők**: témakör-checkboxok (több is jelölhető, `CallTopic` flags), küldő
+  intézmény / alváslabor legördülő (`ReferralSource` törzsadat), kötelező szöveges összefoglaló.
+- A jegyzet **beíródik a beteg Idővonalába**, és visszahívási igény esetén **automata nyitott
+  feladatot** generál a Feladatkezelőben (a jegyzet tartalmával).
+- **Vezetői statisztikai Dashboard** (`CallStatisticsService`): hívásokok %-os megoszlása,
+  küldő alváslaborok/orvosok rangsora, panaszok száma – időszakra szűrve.
+- **UI**: hívásvégi jegyzet a `/hivasok` oldalon, statisztika a `/statisztika` oldalon.
+
 ## Architektúra
 
 Réteges felépítés, hogy a KVL vállalatirányítási rendszer API-jaira később
@@ -140,6 +152,12 @@ ASPNETCORE_ENVIRONMENT=Development dotnet run --project src/Szakuzlet.Web
 - `POST /api/shipments/sync` – nyitott csomagok státuszszinkronja a futár-API-ból
 - `GET  /api/patients/{patientId}/timeline` – a beteg teljes idővonala
 - `POST /api/philips/import` – Philips-csereprojekt CSV import (text/csv törzs)
+
+### Hívásvégi jegyzet / statisztika REST API
+
+- `GET  /api/callnotes/referral-sources` – küldő intézmények / alváslaborok (legördülő)
+- `POST /api/callnotes/{callId}` – hívásvégi jegyzet mentése
+- `GET  /api/callstats?from=&to=` – vezetői hívásstatisztika időszakra
 
 ## Tesztek
 

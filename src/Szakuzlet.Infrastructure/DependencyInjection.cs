@@ -69,6 +69,8 @@ public static class DependencyInjection
         services.AddScoped<Szakuzlet.Application.Calendar.OpeningHoursService>();
         services.AddScoped<Szakuzlet.Application.CallCenter.CallCenterService>();
         services.AddScoped<Szakuzlet.Application.CallCenter.OutboundCallService>();
+        services.AddScoped<Szakuzlet.Application.CallCenter.CallNoteService>();
+        services.AddScoped<Szakuzlet.Application.CallCenter.CallStatisticsService>();
 
         // Futár-szinkron (GLS/MPL) mock a valós API-kig.
         services.AddSingleton<Szakuzlet.Infrastructure.Logistics.MockCourierClient>();

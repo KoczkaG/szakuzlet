@@ -3,6 +3,7 @@ using Szakuzlet.Application.Calendar;
 using Szakuzlet.Domain.Enums;
 
 namespace Szakuzlet.Web.Api;
+// (record definíciók a fájl alján)
 
 /// <summary>
 /// REST végpontok a külső telefonközpont (VoIP) számára. A Call Center ezeket hívja
@@ -115,6 +116,39 @@ public static class CallCenterApi
             await svc.EndCallAsync(callId, req.Answered, req.RecordingReference, ct);
             return Results.NoContent();
         });
+
+        // --- Hívásvégi jegyzet és statisztika ---
+        var n = app.MapGroup("/api/callnotes").WithTags("CallNotes");
+
+        // Küldő intézmények / alváslaborok a legördülő menühöz.
+        n.MapGet("/referral-sources", async (CallNoteService svc, CancellationToken ct) =>
+            Results.Ok(await svc.GetReferralSourcesAsync(ct)));
+
+        // Hívásvégi jegyzet mentése.
+        n.MapPost("/{callId:guid}", async (Guid callId, SaveNoteRequest req,
+            CallNoteService svc, CancellationToken ct) =>
+        {
+            var topics = (CallTopic)req.Topics;
+            try
+            {
+                var note = await svc.SaveAsync(callId,
+                    new CallNoteInput(topics, req.ReferralSourceId, req.Summary, req.FollowUpRequired), ct);
+                return Results.Ok(new { note.Id });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+        });
+
+        // Vezetői hívásstatisztika (időszakra).
+        app.MapGet("/api/callstats", async (DateTimeOffset? from, DateTimeOffset? to,
+            CallStatisticsService svc, CancellationToken ct) =>
+        {
+            var toUtc = to ?? DateTimeOffset.UtcNow;
+            var fromUtc = from ?? toUtc.AddMonths(-1);
+            return Results.Ok(await svc.GetAsync(fromUtc, toUtc, ct));
+        }).WithTags("CallStats");
     }
 }
 
@@ -124,3 +158,4 @@ public record RecordingRequest(string State, string? Actor, string? Reason);
 public record CallbackRequestDto(string PhoneNumber);
 public record StartOutboundRequest(Guid PatientId, string Number, string Kind, Guid? ServiceWorksheetId);
 public record StopRecordingRequest(string? Actor);
+public record SaveNoteRequest(int Topics, Guid? ReferralSourceId, string Summary, bool FollowUpRequired);

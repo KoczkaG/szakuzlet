@@ -25,6 +25,8 @@ public interface IAppDbContext
     DbSet<InvoiceLine> InvoiceLines { get; }
     DbSet<Shipment> Shipments { get; }
     DbSet<PhilipsReplacement> PhilipsReplacements { get; }
+    DbSet<CallNote> CallNotes { get; }
+    DbSet<ReferralSource> ReferralSources { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
