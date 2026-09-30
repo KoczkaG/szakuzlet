@@ -81,6 +81,7 @@ public static class DependencyInjection
         services.AddScoped<Szakuzlet.Application.Postal.PostalTrialService>();
         services.AddScoped<Szakuzlet.Application.Contracts.TrialClosureService>();
         services.AddScoped<Szakuzlet.Application.Telemedicine.TelemedicineService>();
+        services.AddScoped<Szakuzlet.Application.Assistant.AssistantService>();
 
         // Banki szinkron mock a valós banki API-ig.
         services.AddSingleton<Szakuzlet.Infrastructure.Banking.MockBankClient>();

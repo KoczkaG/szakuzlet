@@ -112,6 +112,34 @@ alapján épül fel, moduláris megközelítéssel.
   és a kihordási idő CRM követés a tényleges eladási dátumból.
 - **UI**: pulti számlázás (`/szamlazas`). **REST API**: `/api/billing/...`.
 
+## III. Modul – Szerződés-menedzsment, próbakezelések és táv-ügyintézés
+
+- **A) Szerződés-modul véglegesítés személyes kiszolgálással** – `Contract` + `ContractService`:
+  előkészítés (kaució + baktériumszűrő számlázás, PDF-szerződés Word nélkül), eIDAS SMS-kódos
+  (`ISignatureService`) vagy papír-szkennelt hibrid aláírás, jótállási jegy, OCR-adatbeemelés.
+- **B) Expressz pulti kiszolgálási mód** – `ExpressIntake` + `ExpressIntakeService`: online
+  előkészítés, NEAK/magán előszűrő, összekészítés-értesítés, készlethiány-várakoztatás,
+  variálás → normál sor.
+- **C) Postai úton indított próbakezelések** – `PostalTrial` + `PostalTrialService`: banki előre
+  utalás párosítás (`IBankClient`), raktári zár (aláíratlan nem adható futárnak), kézbesítés +
+  8 napos maszkcsere + kontroll-követés, „Hahó” emlékeztető + elmaradós riport.
+- **D) Próbakezelés lezárása és nyilatkozat-menedzsment** – `TrialClosureService`: sikeres
+  (TB-különbség + visszautalás), hosszabbítás, elutasítás (méltányossági felülbírálat + karantén);
+  SEPA/XML + Magyar Posta kifizetés-export (`IPayoutExporter`).
+- **E) Jogi védőháló a NEAK postai kiszállításokhoz** – `TelemedicineService`: termékalapú
+  oktatóvideó-összeválogatás, időbélyeges oktatás-igazolás (a betanítás kiváltása), rutinos
+  beteg betanítás-lemondása.
+- **F) KVL Digitális Asszisztens és vezetői riporting** – `AssistantService`: prioritásos
+  workflow-áttekintés és próbakezelési vezetői riport (Excel-vezetés kiváltása).
+- **UI**: Digitális Asszisztens (`/asszisztens`). **REST API**: `/api/contracts/...`,
+  `/api/assistant/...`, `/api/education/videos`.
+
+---
+
+**Az I., II. és III. Modul elkészült.** Fejlesztésben SQLite, éles PostgreSQL az EF migrációkkal.
+Minden külső függés (KVL, SMS/e-mail, e-számla, terminál, futár, banki API, eIDAS aláírás,
+OCR, dokumentum-generátor) absztrakció mögött, mockkal – a valós integrációkig.
+
 ## Architektúra
 
 Réteges felépítés, hogy a KVL vállalatirányítási rendszer API-jaira később
